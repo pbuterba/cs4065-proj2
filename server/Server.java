@@ -36,11 +36,4 @@ public class Server {
             thread.start();
         }
     }
-
-    public static void addUser() {}
-    public static void createPost() {}
-    public static void sendUserList() {}
-    public static void removeUser() {}
-    public static void retrieveMessage() {}
-    public static void closeServer() {}
 }
