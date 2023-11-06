@@ -12,14 +12,15 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import server.Message;
+import server.ClientConnection;
 public class Server {
     public static void main(String[] args) throws Exception {
         //Create server socket
-        ServerSocket server_socket = new ServerSocket(6789);
+        ServerSocket serverSocket = new ServerSocket(6789);
 
         //Create data structure to track connected clients, connected users, and messages sent
-        ArrayList<Socket> connected_clients = new ArrayList<Socket>();
-        ArrayList<String> connected_users = new ArrayList<String>();
+        ArrayList<ClientConnection> connectedClients = new ArrayList<ClientConnection>();
+        ArrayList<String> connectedUsers = new ArrayList<String>();
         HashMap<String, Message> messages = new HashMap<String, Message>();
 
         //Print message to show that server program has successfully started
@@ -27,11 +28,15 @@ public class Server {
 
         //Loop infinetely until server is closed
         while(true) {
-
+            Socket clientSocket = serverSocket.accept();
+            ClientConnection newClient = new ClientConnection(clientSocket);
+            System.out.println("New client connected with address " + clientSocket.getRemoteSocketAddress());
+            connectedClients.add(newClient);
+            Thread thread = new Thread(newClient);
+            thread.start();
         }
     }
-    
-    public static void acceptConnection() {}
+
     public static void addUser() {}
     public static void createPost() {}
     public static void sendUserList() {}
