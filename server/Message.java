@@ -3,7 +3,7 @@
  * University of Cincinnati - Fall 2023
  * Project #2: Bulletin Board
  * Project Team: Preston Buterbaugh, Madilyn Coulson, Chloe Belletti
- * Class for messages sent on the bulletin board
+ * Class for representing messages sent on the bulletin board
  */
 
 package server;
