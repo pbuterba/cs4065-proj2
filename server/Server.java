@@ -81,14 +81,13 @@ public class Server implements Runnable {
     }
 
     //Function for user joining the group
-    public static void addUser(String username) {
+    public void addUser(String username) {
         System.out.println(username + " issued join command");
         connectedUsers.add(username);
     }
 
-    public static void createPost() {}
-    public static void sendUserList() {}
-    public static void removeUser() {}
-    public static void retrieveMessage() {}
-    public static void closeServer() {}
+    public void createPost() {}
+    public void sendUserList() {}
+    public void removeUser() {}
+    public void retrieveMessage() {}
 }
