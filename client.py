@@ -7,6 +7,7 @@ Bulletin Board Client
 """
 
 import sys
+import socket
 
 
 def main() -> int:
@@ -24,12 +25,12 @@ def main() -> int:
     print('message [message ID] - Gets the content of a message')
     print('exit - Leaves the message board (if applicable) and exits the client program')
 
-    # Set current command
+    # Set starting variables
     command = ''
+    connection_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     # Loop until command is "exit"
-    while command != 'exit':
-
+    while True:
         # Get next command
         command = input()
 
@@ -37,7 +38,33 @@ def main() -> int:
         if command == 'exit':
             print('Exiting')
             return 0
-        elif command.startswith('connect ') or command.startswith('post ') or command.startswith('message ') or command == 'join' or command == 'users' or command == 'leave':
+        elif command.startswith('connect'):
+            # Get command arguments
+            args = command.split(' ')[1:]
+            if len(args) < 2:
+                print('Not enough arguments supplied for connect command. Requires [hostname] and [port number]')
+                continue
+
+            # Get host and port number from args
+            host = args[0]
+            try:
+                port = int(args[1])
+            except ValueError:
+                print(f'{args[1]} is not a valid port number')
+                continue
+
+            # Create socket connection
+            try:
+                connection_socket.connect((host, port))
+                print('Successfully connected to bulletin board server')
+            except socket.gaierror:
+                print(f'Could not resolve {host}:{port} into a valid IP address')
+                continue
+            except ConnectionRefusedError:
+                print(f'No server found at address {host}:{port}')
+                continue
+
+        elif command.startswith('join') or command.startswith('post') or command.startswith('message') or command == 'users' or command == 'leave':
             print('This command is not yet implemented')
         else:
             print('Invalid command')
