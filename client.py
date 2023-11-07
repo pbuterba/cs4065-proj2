@@ -7,6 +7,27 @@ Bulletin Board Client
 """
 
 import sys
+import socket
+
+""" Create a socket and connect to the server. """
+HOST = 'localhost'
+PORT = 6789
+clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+clientSocket.connect(HOST, PORT)
+
+""" Definition for removeUser client method. """
+def removeUser(user):
+    command = f"removeUser {user}"  # Adjust the command to match the server's command format
+    clientSocket.sendall(command.encode('utf-8'))
+
+""" Definition for userList client method. """
+def userList():
+    command = "sendUserList"
+    clientSocket.sendall(command.encode('utf-8'))
+    
+def close():
+    command = "closeServer"  # Adjust the command to match the server's command format
+    clientSocket.sendall(command.encode('utf-8'))
 
 
 def main() -> int:
@@ -36,9 +57,15 @@ def main() -> int:
         # Check command
         if command == 'exit':
             print('Exiting')
+            close()
             return 0
         elif command.startswith('connect ') or command.startswith('post ') or command.startswith('message ') or command == 'join' or command == 'users' or command == 'leave':
-            print('This command is not yet implemented')
+            if (command == 'leave'):
+                removeUser() # Not sure if this is correct
+            elif (command == 'users'):
+                userList()
+            else:                
+                print('This command is not yet implemented')
         else:
             print('Invalid command')
 

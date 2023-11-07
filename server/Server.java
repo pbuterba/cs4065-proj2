@@ -104,8 +104,56 @@ public class Server implements Runnable {
     }
 
     public void createPost() {}
-    public void sendUserList() {}
-    public void removeUser() {}
+
+    //Function for outputting list of users
+    public void sendUserList() throws Exception{
+        //Get a list of all currently connected users after removing username
+        String userList = "";
+        for(User users : connectedUsers) {
+            userList = userList + users.getUsername() + ",";
+        }
+        userList = userList.substring(0, userList.length() - 1) + "\n"; //Replace trailing comma with newline
+
+        String message = "Current list of users: " + userList;
+        //Inform all other connected clients that the user has left the group
+        for(User connectedUser : connectedUsers) {
+            sendToClient(connectedUser.getSocket(), message);
+        }
+
+
+    }
+    
+    //Function for removing user from the group
+    public void removeUser(User user) throws Exception{
+        System.out.println("Leaving the group. ");
+
+        //Store the username into the messafe
+        String message = user.getUsername() + " left the group";
+        
+        connectedUsers.remove(user);
+
+        //Get a list of all currently connected users after removing username
+        String userList = "";
+        for(User users : connectedUsers) {
+            userList = userList + users.getUsername() + ",";
+        }
+        userList = userList.substring(0, userList.length() - 1) + "\n"; //Replace trailing comma with newline
+
+        //Send user list to client
+        sendToClient(socket, userList);
+
+        //Inform all other connected clients that the user has left the group
+        for(User connectedUser : connectedUsers) {
+            sendToClient(connectedUser.getSocket(), message);
+        }
+    }
+
+    //Function for closing the server
+    public static void closeServer() {
+        System.out.println("Closing the server and exiting the client program.");
+        System.exit(0);
+    }
+
     public void retrieveMessage() {}
 
     //Static helper functions
