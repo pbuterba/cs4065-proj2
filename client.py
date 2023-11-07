@@ -56,14 +56,13 @@ def main() -> int:
             # Create socket connection
             try:
                 connection_socket.connect((host, port))
-                print('Successfully connected to bulletin board server')
             except socket.gaierror:
                 print(f'Could not resolve {host}:{port} into a valid IP address')
                 continue
             except ConnectionRefusedError:
                 print(f'No server found at address {host}:{port}')
                 continue
-
+            print('Successfully connected to bulletin board server')
         elif command.startswith('join') or command.startswith('post') or command.startswith('message') or command == 'users' or command == 'leave':
             print('This command is not yet implemented')
         else:
