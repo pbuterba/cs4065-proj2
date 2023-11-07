@@ -56,8 +56,7 @@ public class Server implements Runnable {
 
     private void waitForClientData() throws Exception {
         //Get line of text sent from client
-        BufferedReader streamFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        String dataLine = streamFromClient.readLine();
+        String dataLine = readFromClient(socket);
 
         //Loop until the text "exit" is sent
         while(!dataLine.equals("exit")) {
@@ -81,13 +80,42 @@ public class Server implements Runnable {
     }
 
     //Function for user joining the group
-    public void addUser(String username) {
+    public void addUser(String username) throws Exception {
         System.out.println(username + " issued join command");
+
+        //Get a list of all currently connected users
+        String userList = "";
+        for(String user : connectedUsers) {
+            userList = userList + user + ",";
+        }
+        userList = userList.substring(0, userList.length() - 1) + "\n"; //Replace trailing comma with newline
+
+        //Send user list to client
+        sendToClient(socket, userList);
+
+        //Add the newly connected user to the server's list of users
         connectedUsers.add(username);
+
+        //Inform all other connected clients that the user has joined
+        String message = username + " joined the group";
+        for(Socket connectedSocket : connectedClients) {
+            sendToClient(connectedSocket, message);
+        }
     }
 
     public void createPost() {}
     public void sendUserList() {}
     public void removeUser() {}
     public void retrieveMessage() {}
+
+    //Static helper functions
+    public static String readFromClient(Socket clientSocket) throws Exception {
+        BufferedReader streamFromClient = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        return streamFromClient.readLine();
+    }
+
+    public static void sendToClient(Socket clientSocket, String data) throws Exception {
+        DataOutputStream streamToClient = new DataOutputStream(clientSocket.getOutputStream());
+        streamToClient.writeBytes(data);
+    }
 }
