@@ -1,3 +1,10 @@
+/*
+ * CS 4065 - Computer Networks & Networked Computing
+ * University of Cincinnati - Fall 2023
+ * Project #2: Bulletin Board
+ * Project Team: Preston Buterbaugh, Madilyn Coulson, Chloe Belletti
+ * Class for representing users connected to a group
+ */
 package server;
 
 import java.net.*;
