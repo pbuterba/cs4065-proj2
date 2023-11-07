@@ -12,10 +12,10 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import server.Message;
+import server.User;
 public class Server implements Runnable {
     //Static server data structures
-    public static ArrayList<Socket> connectedClients = new ArrayList<Socket>();
-    public static ArrayList<String> connectedUsers = new ArrayList<String>();
+    public static ArrayList<User> connectedUsers = new ArrayList<User>();
     public static HashMap<String, Message> messages = new HashMap<String, Message>();
     
     //Field for the client connection socket (used in threads)
@@ -39,7 +39,6 @@ public class Server implements Runnable {
             Socket clientSocket = serverSocket.accept();
             Server clientConnection = new Server(clientSocket);
             System.out.println("New client connected with address " + clientSocket.getRemoteSocketAddress());
-            connectedClients.add(clientSocket);
             Thread thread = new Thread(clientConnection);
             thread.start();
         }
@@ -56,8 +55,7 @@ public class Server implements Runnable {
 
     private void waitForClientData() throws Exception {
         //Get line of text sent from client
-        BufferedReader streamFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        String dataLine = streamFromClient.readLine();
+        String dataLine = readFromClient(socket);
 
         //Loop until the text "exit" is sent
         while(!dataLine.equals("exit")) {
@@ -81,10 +79,45 @@ public class Server implements Runnable {
     }
 
     //Function for user joining the group
-    public static void addUser(String username) {
+    public void addUser(String username) throws Exception {
         System.out.println(username + " issued join command");
-        connectedUsers.add(username);
+
+        //Get a list of all currently connected users
+        String userList = "";
+        for(User user : connectedUsers) {
+            userList = userList + user.getUsername() + ",";
+        }
+        userList = userList.substring(0, userList.length() - 1) + "\n"; //Replace trailing comma with newline
+
+        //Send user list to client
+        sendToClient(socket, userList);
+
+        //Add the newly connected user to the server's list of users
+        User newUser = new User(username, socket);
+        connectedUsers.add(newUser);
+
+        //Inform all other connected clients that the user has joined
+        String message = username + " joined the group";
+        for(User connectedUser : connectedUsers) {
+            sendToClient(connectedUser.getSocket(), message);
+        }
     }
+
+
+    public void createPost() {}
+    public void sendUserList() {}
+    public void removeUser() {}
+    public void retrieveMessage() {}
+
+    //Static helper functions
+    public static String readFromClient(Socket clientSocket) throws Exception {
+        BufferedReader streamFromClient = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        return streamFromClient.readLine();
+    }
+
+    public static void sendToClient(Socket clientSocket, String data) throws Exception {
+        DataOutputStream streamToClient = new DataOutputStream(clientSocket.getOutputStream());
+        streamToClient.writeBytes(data);
 
     public static void createPost() {}
 
@@ -108,5 +141,6 @@ public class Server implements Runnable {
     public static void closeServer() {
         System.out.println("Closing the server and exiting the client program.");
         System.exit(0);
+
     }
 }
