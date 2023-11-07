@@ -103,6 +103,7 @@ public class Server implements Runnable {
         }
     }
 
+
     public void createPost() {}
     public void sendUserList() {}
     public void removeUser() {}
@@ -117,5 +118,29 @@ public class Server implements Runnable {
     public static void sendToClient(Socket clientSocket, String data) throws Exception {
         DataOutputStream streamToClient = new DataOutputStream(clientSocket.getOutputStream());
         streamToClient.writeBytes(data);
+
+    public static void createPost() {}
+
+    //Function for outputting list of users
+    public static void sendUserList() {
+        System.out.println("List of active users: ");
+        for (String element : connectedUsers) {
+            System.out.println(element);
+        }
+    }
+
+    //Function for removing user from the group
+    public static void removeUser(String username) {
+        System.out.println("Leaving the group. ");
+        connectedUsers.remove(username);
+    }
+
+    public static void retrieveMessage() {}
+
+    //Function for closing the server.
+    public static void closeServer() {
+        System.out.println("Closing the server and exiting the client program.");
+        System.exit(0);
+
     }
 }
