@@ -12,10 +12,10 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import server.Message;
+import server.User;
 public class Server implements Runnable {
     //Static server data structures
-    public static ArrayList<Socket> connectedClients = new ArrayList<Socket>();
-    public static ArrayList<String> connectedUsers = new ArrayList<String>();
+    public static ArrayList<User> connectedUsers = new ArrayList<User>();
     public static HashMap<String, Message> messages = new HashMap<String, Message>();
     
     //Field for the client connection socket (used in threads)
@@ -39,7 +39,6 @@ public class Server implements Runnable {
             Socket clientSocket = serverSocket.accept();
             Server clientConnection = new Server(clientSocket);
             System.out.println("New client connected with address " + clientSocket.getRemoteSocketAddress());
-            connectedClients.add(clientSocket);
             Thread thread = new Thread(clientConnection);
             thread.start();
         }
@@ -85,8 +84,8 @@ public class Server implements Runnable {
 
         //Get a list of all currently connected users
         String userList = "";
-        for(String user : connectedUsers) {
-            userList = userList + user + ",";
+        for(User user : connectedUsers) {
+            userList = userList + user.getUsername() + ",";
         }
         userList = userList.substring(0, userList.length() - 1) + "\n"; //Replace trailing comma with newline
 
@@ -94,12 +93,13 @@ public class Server implements Runnable {
         sendToClient(socket, userList);
 
         //Add the newly connected user to the server's list of users
-        connectedUsers.add(username);
+        User newUser = new User(username, socket);
+        connectedUsers.add(newUser);
 
         //Inform all other connected clients that the user has joined
         String message = username + " joined the group";
-        for(Socket connectedSocket : connectedClients) {
-            sendToClient(connectedSocket, message);
+        for(User connectedUser : connectedUsers) {
+            sendToClient(connectedUser.getSocket(), message);
         }
     }
 
