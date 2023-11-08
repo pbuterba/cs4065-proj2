@@ -6,8 +6,8 @@ Project Team: Preston Buterbaugh, Madilyn Coulson, Chloe Belletti
 Bulletin Board Client
 """
 
-import sys
 import socket
+import sys
 
 
 def main() -> int:
@@ -63,7 +63,42 @@ def main() -> int:
                 print(f'No server found at address {host}:{port}')
                 continue
             print('Successfully connected to bulletin board server')
-        elif command.startswith('join') or command.startswith('post') or command.startswith('message') or command == 'users' or command == 'leave':
+        elif command.startswith('join'):
+            # Get command arguments
+            args = command.split(' ')[1:]
+            if len(args) < 1:
+                print('Not enough arguments specified for join command. Requires [username]')
+                continue
+
+            # Construct join command
+            username = args[0]
+            message = f'join {username}\n'
+
+            # Send join command
+            try:
+                connection_socket.sendall(message.encode('utf-8'))
+            except OSError:
+                print('Unable to join group. You are not connected to a bulletin board server.')
+                continue
+
+            print('Successfully joined the group')
+
+            # Listen for user list
+            user_list = connection_socket.recv(4096).decode('utf-8')
+
+            # Remove newline character
+            if user_list.endswith('\n'):
+                user_list = user_list[0:len(user_list) - 1]
+
+            # Convert to list
+            user_list = user_list.split(',')
+
+            # Print if there are any items in the list
+            if user_list[0]:
+                print('Currently online users:')
+                for username in user_list:
+                    print(username)
+        elif command.startswith('post') or command.startswith('message') or command == 'users' or command == 'leave':
             print('This command is not yet implemented')
         else:
             print('Invalid command')
