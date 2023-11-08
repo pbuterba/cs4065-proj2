@@ -6,6 +6,7 @@ Project Team: Preston Buterbaugh, Madilyn Coulson, Chloe Belletti
 Bulletin Board Client
 """
 
+import json
 import socket
 import sys
 
@@ -106,21 +107,25 @@ def join_group(username: str) -> int:
 
     print('Successfully joined the group')
 
-    # Listen for user list
-    user_list = connection_socket.recv(4096).decode('utf-8')
+    # Listen for return data
+    data_string = ''
+    while '\n' not in data_string:
+        data_string = data_string + connection_socket.recv(4096).decode('utf-8')
 
-    # Remove newline character
-    if user_list.endswith('\n'):
-        user_list = user_list[0:len(user_list) - 1]
+    # Convert JSON string into a dictionary, dropping the newline character off the end
+    join_data = json.loads(data_string[0:len(data_string) - 1])
 
-    # Convert to list
-    user_list = user_list.split(',')
-
-    # Print if there are any items in the list
-    if user_list[0]:
+    # Print online users
+    if join_data['users']:
         print('Currently online users:')
-        for username in user_list:
-            print(username)
+        for user in join_data['users']:
+            print(user)
+
+    # Print last two messages
+    if join_data['messages']:
+        print('Most recent messages:')
+        for message in join_data['messages']:
+            print(message)
 
     return 0
 
