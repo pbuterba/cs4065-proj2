@@ -46,4 +46,18 @@ public class Message {
     public String getContent() {
         return content;
     }
+
+    //Other methods
+    @Override
+    public String toString() {
+        return id + " " + sender + " " + date.toString() + " " + subject;
+    }
+
+    public String toJsonString() {
+        String JsonString = "{\"id\": \"" + id + "\", ";
+        JsonString = JsonString + "\"sender\": \"" + sender + "\", ";
+        JsonString = JsonString + "\"date\": \"" + date.toString() + "\", ";
+        JsonString = JsonString + "\"subject\": \"" + subject + "\"}";
+        return JsonString;
+    }
 }

@@ -16,7 +16,7 @@ import server.User;
 public class Server implements Runnable {
     //Static server data structures
     public static ArrayList<User> connectedUsers = new ArrayList<User>();
-    public static HashMap<String, Message> messages = new HashMap<String, Message>();
+    public static ArrayList<Message> messages = new ArrayList<Message>();
     
     //Field for the client connection socket (used in threads)
     private Socket socket;
@@ -54,6 +54,7 @@ public class Server implements Runnable {
     }
 
     private void waitForClientData() throws Exception {
+
         //Get line of text sent from client
         String dataLine = readFromClient(socket);
 
@@ -71,6 +72,8 @@ public class Server implements Runnable {
             if(command.equals("join")) {
                 addUser(args.get(0));
             }
+
+            dataLine = readFromClient(socket);
         }
         
         //Close the socket
@@ -82,25 +85,39 @@ public class Server implements Runnable {
     public void addUser(String username) throws Exception {
         System.out.println(username + " issued join command");
 
+        //Gather information to send to the new user formatted as JSON string
+        String payload = "{\"users\": [";
+        
         //Get a list of all currently connected users
-        String userList = "";
         for(User user : connectedUsers) {
-            userList = userList + user.getUsername() + ",";
+            payload = payload + "\"" + user.getUsername() + "\",";
         }
-        userList = userList.substring(0, userList.length() - 1) + "\n"; //Replace trailing comma with newline
+        if(connectedUsers.size() > 0) {
+            payload = payload.substring(0, payload.length() - 1); //Remove trailing comma
+        }
+        payload += "], \"messages\": [";
 
-        //Send user list to client
-        sendToClient(socket, userList);
+        //Get last two messages sent
+        if(messages.size() >= 2) {
+            payload = payload + messages.get(messages.size() - 2).toJsonString() + ",";
+        }
+        if(messages.size() >= 1) {
+            payload = payload + messages.get(messages.size() - 1).toJsonString();
+        }
+        payload = payload + "]}\n";
+
+        //Send payload data to client
+        sendToClient(socket, payload);
+        
+        //Inform all other connected clients that the user has joined
+        String message = username + " joined the group\n";
+        for(User connectedUser : connectedUsers) {
+            sendToClient(connectedUser.getSocket(), message);
+        }
 
         //Add the newly connected user to the server's list of users
         User newUser = new User(username, socket);
         connectedUsers.add(newUser);
-
-        //Inform all other connected clients that the user has joined
-        String message = username + " joined the group";
-        for(User connectedUser : connectedUsers) {
-            sendToClient(connectedUser.getSocket(), message);
-        }
     }
 
     public void createPost() {}
