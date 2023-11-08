@@ -9,6 +9,8 @@ Bulletin Board Client
 import socket
 import sys
 
+# Create global socket variable
+connection_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 def main() -> int:
     """
@@ -24,10 +26,6 @@ def main() -> int:
     print('leave - Leaves the message board')
     print('message [message ID] - Gets the content of a message')
     print('exit - Leaves the message board (if applicable) and exits the client program')
-
-    # Set starting variables
-    command = ''
-    connection_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     # Loop until command is "exit"
     while True:
@@ -45,24 +43,12 @@ def main() -> int:
                 print('Not enough arguments supplied for connect command. Requires [hostname] and [port number]')
                 continue
 
-            # Get host and port number from args
-            host = args[0]
+            # Verify that port number is an integer and call function to join group
             try:
-                port = int(args[1])
+                client_connect(args[0], int(args[1]))
             except ValueError:
                 print(f'{args[1]} is not a valid port number')
                 continue
-
-            # Create socket connection
-            try:
-                connection_socket.connect((host, port))
-            except socket.gaierror:
-                print(f'Could not resolve {host}:{port} into a valid IP address')
-                continue
-            except ConnectionRefusedError:
-                print(f'No server found at address {host}:{port}')
-                continue
-            print('Successfully connected to bulletin board server')
         elif command.startswith('join'):
             # Get command arguments
             args = command.split(' ')[1:]
@@ -70,38 +56,73 @@ def main() -> int:
                 print('Not enough arguments specified for join command. Requires [username]')
                 continue
 
-            # Construct join command
-            username = args[0]
-            message = f'join {username}\n'
-
-            # Send join command
-            try:
-                connection_socket.sendall(message.encode('utf-8'))
-            except OSError:
-                print('Unable to join group. You are not connected to a bulletin board server.')
-                continue
-
-            print('Successfully joined the group')
-
-            # Listen for user list
-            user_list = connection_socket.recv(4096).decode('utf-8')
-
-            # Remove newline character
-            if user_list.endswith('\n'):
-                user_list = user_list[0:len(user_list) - 1]
-
-            # Convert to list
-            user_list = user_list.split(',')
-
-            # Print if there are any items in the list
-            if user_list[0]:
-                print('Currently online users:')
-                for username in user_list:
-                    print(username)
+            # Call function to join group
+            join_group(args[0])
         elif command.startswith('post') or command.startswith('message') or command == 'users' or command == 'leave':
             print('This command is not yet implemented')
         else:
             print('Invalid command')
+
+
+def client_connect(host: str, port: int) -> int:
+    """
+    @brief  Connects the client socket to the server at the specified address
+    @param  (str) host: The internet address of the server to connect to
+    @param  (int) port: The port to connect to on the server
+    @return: (int)
+            - 0 if successful connection
+            - 1 otherwise
+    """
+    # Create socket connection
+    try:
+        connection_socket.connect((host, port))
+    except socket.gaierror:
+        print(f'Could not resolve {host}:{port} into a valid IP address')
+        return 1
+    except ConnectionRefusedError:
+        print(f'No server found at address {host}:{port}')
+        return 1
+    print('Successfully connected to bulletin board server')
+    return 0
+
+
+def join_group(username: str) -> int:
+    """
+    @brief  Joins the group using the specified username
+    @param  (str) username: The name with which to join the group
+    @return: (int)
+            - 0 if successful group join
+            - 1 otherwise
+    """
+    # Construct join command
+    message = f'join {username}\n'
+
+    # Send join command
+    try:
+        connection_socket.sendall(message.encode('utf-8'))
+    except OSError:
+        print('Unable to join group. You are not connected to a bulletin board server.')
+        return 1
+
+    print('Successfully joined the group')
+
+    # Listen for user list
+    user_list = connection_socket.recv(4096).decode('utf-8')
+
+    # Remove newline character
+    if user_list.endswith('\n'):
+        user_list = user_list[0:len(user_list) - 1]
+
+    # Convert to list
+    user_list = user_list.split(',')
+
+    # Print if there are any items in the list
+    if user_list[0]:
+        print('Currently online users:')
+        for username in user_list:
+            print(username)
+
+    return 0
 
 
 if __name__ == "__main__":
