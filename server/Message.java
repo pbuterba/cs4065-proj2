@@ -8,7 +8,9 @@
 
 package server;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
+
 public class Message {
     //Fields
     private String id;
@@ -36,7 +38,8 @@ public class Message {
     }
 
     public String getPostDate() {
-        return date.toString();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); // Format as needed
+        return dateFormat.format(date);
     }
 
     public String getSubject() {
@@ -50,13 +53,13 @@ public class Message {
     //Other methods
     @Override
     public String toString() {
-        return id + " " + sender + " " + date.toString() + " " + subject;
+        return id + " " + sender + " " + getPostDate() + " " + subject;
     }
 
     public String toJsonString() {
         String JsonString = "{\"id\": \"" + id + "\", ";
         JsonString = JsonString + "\"sender\": \"" + sender + "\", ";
-        JsonString = JsonString + "\"date\": \"" + date.toString() + "\", ";
+        JsonString = JsonString + "\"date\": \"" + getPostDate() + "\", ";
         JsonString = JsonString + "\"subject\": \"" + subject + "\"}";
         return JsonString;
     }

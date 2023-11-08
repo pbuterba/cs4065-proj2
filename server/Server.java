@@ -120,11 +120,58 @@ public class Server implements Runnable {
         connectedUsers.add(newUser);
     }
 
-    public void createPost() {}
+    // Function to get the current date and time in the required format
+    private String getCurrentDateTime() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date currentDate = new Date();
+        return dateFormat.format(currentDate);
+    }    
+
+    // Function to create a new post on the message board
+    public void createPost(String username, String messageText) throws Exception {
+        // Create a new message with a unique ID, sender, post date, subject, and content
+        int messageID = messages.size() + 1; // Generate a unique ID
+        String postDate = getCurrentDateTime(); // Implement this function to get the current date and time
+        String subject = "Public Message"; // You can customize the subject
+
+        // Create the message object
+        Message newMessage = new Message(Integer.toString(messageID), username, postDate, subject, messageText);
+
+        // Add the new message to the list of messages
+        messages.add(newMessage);
+
+        // Broadcast the new message to all connected clients
+        String messageContent = newMessage.toJsonString();
+        for (User connectedUser : connectedUsers) {
+            sendToClient(connectedUser.getSocket(), messageContent);
+        }
+    }
+    
+    // Function to retrieve the content of a specific message by its ID
+    public void retrieveMessage(int messageID, Socket clientSocket) throws Exception {
+        // Find the message with the given ID
+        Message targetMessage = null;
+        for (Message message : messages) {
+            if (Integer.parseInt(message.getId()) == messageID) {
+                targetMessage = message;
+                break;
+            }
+        }
+        if (targetMessage != null) {
+            // Send the message content to the client
+            String messageContent = targetMessage.toJsonString();
+            sendToClient(clientSocket, messageContent);
+        } else {
+            // Notify the client that the message was not found
+            String errorMessage = "Message with ID " + messageID + " not found";
+            sendToClient(clientSocket, errorMessage);
+        }
+    }
+
+
     public void sendUserList() {}
     public void removeUser() {}
-    public void retrieveMessage() {}
-
+    
     //Static helper functions
     public static String readFromClient(Socket clientSocket) throws Exception {
         BufferedReader streamFromClient = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
