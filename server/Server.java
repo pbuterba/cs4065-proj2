@@ -54,6 +54,7 @@ public class Server implements Runnable {
     }
 
     private void waitForClientData() throws Exception {
+
         //Get line of text sent from client
         String dataLine = readFromClient(socket);
 
@@ -71,6 +72,8 @@ public class Server implements Runnable {
             if(command.equals("join")) {
                 addUser(args.get(0));
             }
+
+            dataLine = readFromClient(socket);
         }
         
         //Close the socket
@@ -87,20 +90,23 @@ public class Server implements Runnable {
         for(User user : connectedUsers) {
             userList = userList + user.getUsername() + ",";
         }
-        userList = userList.substring(0, userList.length() - 1) + "\n"; //Replace trailing comma with newline
+        if(userList.length() > 0) {
+            userList = userList.substring(0, userList.length() - 1); //Remove trailing comma
+        }
 
         //Send user list to client
+        userList = userList + "\n";
         sendToClient(socket, userList);
+        
+        //Inform all other connected clients that the user has joined
+        String message = username + " joined the group\n";
+        for(User connectedUser : connectedUsers) {
+            sendToClient(connectedUser.getSocket(), message);
+        }
 
         //Add the newly connected user to the server's list of users
         User newUser = new User(username, socket);
         connectedUsers.add(newUser);
-
-        //Inform all other connected clients that the user has joined
-        String message = username + " joined the group";
-        for(User connectedUser : connectedUsers) {
-            sendToClient(connectedUser.getSocket(), message);
-        }
     }
 
     public void createPost() {}
