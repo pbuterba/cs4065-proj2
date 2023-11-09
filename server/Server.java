@@ -73,6 +73,12 @@ public class Server implements Runnable {
             if(command.equals("join")) {
                 addUser(args.get(0));
             }
+            else if(command.equals(anObject:"post")) {
+                createPost(args.get(index:0), args.get(index:1), args.get(index:2));
+            }
+            else if(command.equals(anObject:"message")) {
+                retrieveMessage(args.get(index:0), args.get(index:1));
+            }
 
             dataLine = readFromClient(socket);
         }
@@ -159,7 +165,6 @@ public class Server implements Runnable {
             sendToClient(clientSocket, errorMessage);
         }
     }
-
 
     public void sendUserList() {}
     public void removeUser() {}
