@@ -72,6 +72,12 @@ public class Server implements Runnable {
             if(command.equals("join")) {
                 addUser(args.get(0));
             }
+            else if (command.equals("users")) {
+                sendUserList();
+            }
+            else if(command.equals("leave")){
+                removeUser(args.get(0));
+            }
 
             dataLine = readFromClient(socket);
         }
@@ -121,8 +127,70 @@ public class Server implements Runnable {
     }
 
     public void createPost() {}
-    public void sendUserList() {}
-    public void removeUser() {}
+
+    //Function for outputting list of users.
+    public void sendUserList() throws Exception{
+        //Get a list of all currently connected users
+        String userList = "";
+        for(User users : connectedUsers) {
+            userList = userList + users.getUsername() + ",";
+        }
+        userList = userList.substring(0, userList.length() - 1) + "\n"; //Replace trailing comma with newline
+
+        //Store the list of usernames in a message
+        String message = "Current list of users: " + userList;
+        //Inform all connected clients of the list of users
+        for(User connectedUser : connectedUsers) {
+            sendToClient(connectedUser.getSocket(), message);
+        }
+    }
+
+    //Function for removing user from the group
+    public void removeUser(String username) throws Exception{
+        
+        User user = null;
+        //Ensure that the user is part of the connected users
+        for(User users:connectedUsers) {
+            if (users.getUsername() == username) {
+                user = users;
+                break;
+            }
+        }
+
+        if (user == null) {
+            throw new IllegalArgumentException("User not found in group.");
+        }
+        
+        //Store the username into the message
+        String message = user.getUsername() + " left the group";
+
+        //Print that the user is leaving the group
+        System.out.println(user.getUsername() + " is leaving the group. ");
+        
+        //Remove the user from connectUsers
+        connectedUsers.remove(user);
+      
+        //Gather information to send to the new user formatted as JSON string
+        String payload = "{\"users\": [";
+        
+        //Get a list of all currently connected users after removing user
+        for(User users : connectedUsers) {
+            payload = payload + "\"" + users.getUsername() + "\",";
+        }
+        if(connectedUsers.size() > 0) {
+            payload = payload.substring(0, payload.length() - 1); //Remove trailing comma
+        }
+        payload += "]";
+
+        //Send user list to client
+        sendToClient(socket, payload);
+
+        //Inform all other connected clients that the user has left the group
+        for(User connectedUser : connectedUsers) {
+            sendToClient(connectedUser.getSocket(), message);
+        }
+    }
+
     public void retrieveMessage() {}
 
     //Static helper functions
