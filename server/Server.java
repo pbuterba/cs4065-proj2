@@ -76,8 +76,7 @@ public class Server implements Runnable {
                 sendUserList();
             }
             else if(command.equals("leave")){
-                User user = new User(args.get(0), socket);
-                removeUser(user);
+                removeUser(args.get(0));
             }
 
             dataLine = readFromClient(socket);
@@ -147,11 +146,19 @@ public class Server implements Runnable {
     }
 
     //Function for removing user from the group
-    public void removeUser(User user) throws Exception{
+    public void removeUser(String username) throws Exception{
         
+        User user = null;
         //Ensure that the user is part of the connected users
-        if (!connectedUsers.contains(user)) {
-            throw new IllegalArgumentException("User not found in the connectedUsers list.");
+        for(User users:connectedUsers) {
+            if (users.getUsername() == username) {
+                user = users;
+                break;
+            }
+        }
+
+        if (user == null) {
+            throw new IllegalArgumentException("User not found in group.");
         }
         
         //Store the username into the message
@@ -162,8 +169,7 @@ public class Server implements Runnable {
         
         //Remove the user from connectUsers
         connectedUsers.remove(user);
-
-        
+      
         //Gather information to send to the new user formatted as JSON string
         String payload = "{\"users\": [";
         

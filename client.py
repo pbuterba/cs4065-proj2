@@ -13,6 +13,8 @@ import sys
 # Create global socket variable
 connection_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+client_username = ""
+
 def main() -> int:
     """
     @brief  This is the main function for the Bulletin Board Client
@@ -62,11 +64,6 @@ def main() -> int:
         elif command == 'users':
             user_list()
         elif command == 'leave':
-            # Get command arguments
-            args = command.split(' ')[1:]
-            if len(args) < 1:
-                print('Not enough arguments specified for join command. Requires [username]')
-                continue
             # Call function to leave group
             leave_group(args[0])
         
@@ -117,6 +114,7 @@ def join_group(username: str) -> int:
         return 1
 
     print('Successfully joined the group')
+    client_username = username
 
     # Listen for return data
     data_string = ''
@@ -161,9 +159,9 @@ def user_list() -> int:
     
     return 0
 
-def leave_group(username: str)-> int:
+def leave_group()-> int:
     # Construct leave command
-    message = f'leave {username}\n'
+    message = f'leave {client_username}\n'
     
     # Send leave command
     try:
