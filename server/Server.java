@@ -128,7 +128,7 @@ public class Server implements Runnable {
         String subject = messageText; // subject
 
         // Create the message object
-        Message newMessage = new Message(Integer.toString(messageID), username, newMessage.getPostDate(), subject, messageText);
+        Message newMessage = new Message(Integer.toString(messageID), username, subject, messageText);
 
         // Add the new message to the list of messages
         messages.add(newMessage);
