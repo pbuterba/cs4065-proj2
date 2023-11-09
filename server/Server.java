@@ -119,24 +119,16 @@ public class Server implements Runnable {
         //Add the newly connected user to the server's list of users
         User newUser = new User(username, socket);
         connectedUsers.add(newUser);
-    }
-
-    // Function to get the current date and time in the required format
-    private String getCurrentDateTime() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Date currentDate = new Date();
-        return dateFormat.format(currentDate);
-    }    
+    }  
 
     // Function to create a new post on the message board
     public void createPost(String username, String messageText) throws Exception {
         // Create a new message with a unique ID, sender, post date, subject, and content
         int messageID = messages.size() + 1; // Generate a unique ID
-        String postDate = getCurrentDateTime(); // Implement this function to get the current date and time
-        String subject = "Public Message"; // You can customize the subject
+        String subject = messageText; // subject
 
         // Create the message object
-        Message newMessage = new Message(Integer.toString(messageID), username, postDate, subject, messageText);
+        Message newMessage = new Message(Integer.toString(messageID), username, newMessage.getPostDate(), subject, messageText);
 
         // Add the new message to the list of messages
         messages.add(newMessage);

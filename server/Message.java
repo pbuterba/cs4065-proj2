@@ -20,7 +20,7 @@ public class Message {
     private String content;
 
     //Constructor
-    public Message(String id, String sender, String date, String subject, String content) {
+    public Message(String id, String sender, String subject, String content) {
         this.id = id;
         this.sender = sender;
         this.date = new Date();
