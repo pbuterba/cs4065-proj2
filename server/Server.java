@@ -73,11 +73,11 @@ public class Server implements Runnable {
             if(command.equals("join")) {
                 addUser(args.get(0));
             }
-            else if(command.equals(anObject:"post")) {
-                createPost(args.get(index:0), args.get(index:1), args.get(index:2));
+            else if(command.equals("post")) {
+                createPost(args.get(0), args.get(1), args.get(2));
             }
-            else if(command.equals(anObject:"message")) {
-                retrieveMessage(args.get(index:0), args.get(index:1));
+            else if(command.equals("message")) {
+                retrieveMessage(args.get(0));
             }
 
             dataLine = readFromClient(socket);
@@ -146,11 +146,11 @@ public class Server implements Runnable {
     }
     
     // Function to retrieve the content of a specific message by its ID
-    public void retrieveMessage(int messageID, Socket clientSocket) throws Exception {
+    public void retrieveMessage(String messageID) throws Exception {
         // Find the message with the given ID
         Message targetMessage = null;
         for (Message message : messages) {
-            if (Integer.parseInt(message.getId()) == messageID) {
+            if (message.getId().equals(messageID)) {
                 targetMessage = message;
                 break;
             }
@@ -158,11 +158,11 @@ public class Server implements Runnable {
         if (targetMessage != null) {
             // Send the message content to the client
             String messageContent = targetMessage.toJsonString();
-            sendToClient(clientSocket, messageContent);
+            sendToClient(socket, messageContent);
         } else {
             // Notify the client that the message was not found
             String errorMessage = "Message with ID " + messageID + " not found";
-            sendToClient(clientSocket, errorMessage);
+            sendToClient(socket, errorMessage);
         }
     }
 
