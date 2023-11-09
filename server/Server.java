@@ -64,7 +64,7 @@ public class Server implements Runnable {
             //Split the input line into the command and any following arguments
             StringTokenizer tokens = new StringTokenizer(dataLine);
             String command = tokens.nextToken();
-            ArrayList<String> args = new ArrayList<String>(tokens.countTokens() - 1);
+            ArrayList<String> args = new ArrayList<String>();
             while(tokens.hasMoreTokens()) {
                 args.add(tokens.nextToken());
             }

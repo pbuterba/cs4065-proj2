@@ -81,7 +81,7 @@ def main() -> int:
             user_list()
         elif command == 'leave':
             # Call function to leave group
-            leave_group(args[0])
+            leave_group()
         else:
             print('Invalid command')
 
