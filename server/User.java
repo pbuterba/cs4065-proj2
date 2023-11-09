@@ -6,8 +6,8 @@
  * Class for representing users connected to a group
  */
 package server;
-
 import java.net.*;
+
 public class User {
    //Fields
    private String username;
@@ -23,6 +23,7 @@ public class User {
    public String getUsername() {
       return username;
    }
+   
    public Socket getSocket() {
       return socket;
    }

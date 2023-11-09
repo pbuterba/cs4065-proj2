@@ -13,6 +13,7 @@ import java.net.*;
 import java.util.*;
 import server.Message;
 import server.User;
+
 public class Server implements Runnable {
     //Static server data structures
     public static ArrayList<User> connectedUsers = new ArrayList<User>();
@@ -72,6 +73,11 @@ public class Server implements Runnable {
             if(command.equals("join")) {
                 addUser(args.get(0));
             }
+            else if(command.equals("post")) {
+                createPost(args.get(0), args.get(1), args.get(2));
+            }
+            else if(command.equals("message")) {
+                retrieveMessage(args.get(0));
             else if (command.equals("users")) {
                 sendUserList();
             }
@@ -124,9 +130,46 @@ public class Server implements Runnable {
         //Add the newly connected user to the server's list of users
         User newUser = new User(username, socket);
         connectedUsers.add(newUser);
-    }
+    }  
 
-    public void createPost() {}
+    // Function to create a new post on the message board
+    public void createPost(String username, String subject, String messageText) throws Exception {
+        // Create a new message with a unique ID, sender, post date, subject, and content
+        int messageID = messages.size() + 1; // Generate a unique ID
+
+        // Create the message object
+        Message newMessage = new Message(Integer.toString(messageID), username, subject, messageText);
+
+        // Add the new message to the list of messages
+        messages.add(newMessage);
+
+        // Broadcast the new message to all connected clients
+        String messageContent = newMessage.toJsonString();
+        for (User connectedUser : connectedUsers) {
+            sendToClient(connectedUser.getSocket(), messageContent);
+        }
+    }
+    
+    // Function to retrieve the content of a specific message by its ID
+    public void retrieveMessage(String messageID) throws Exception {
+        // Find the message with the given ID
+        Message targetMessage = null;
+        for (Message message : messages) {
+            if (message.getId().equals(messageID)) {
+                targetMessage = message;
+                break;
+            }
+        }
+        if (targetMessage != null) {
+            // Send the message content to the client
+            String messageContent = targetMessage.toJsonString();
+            sendToClient(socket, messageContent);
+        } else {
+            // Notify the client that the message was not found
+            String errorMessage = "Message with ID " + messageID + " not found";
+            sendToClient(socket, errorMessage);
+        }
+    }
 
     //Function for outputting list of users.
     public void sendUserList() throws Exception{
@@ -190,8 +233,6 @@ public class Server implements Runnable {
             sendToClient(connectedUser.getSocket(), message);
         }
     }
-
-    public void retrieveMessage() {}
 
     //Static helper functions
     public static String readFromClient(Socket clientSocket) throws Exception {

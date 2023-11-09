@@ -61,14 +61,27 @@ def main() -> int:
 
             # Call function to join group
             join_group(args[0])
+            
+        elif command.startswith('post'):
+            args = command.split(' ')[1:]
+            if len(args) < 2:
+                print('Not enough arguments supplied for post command. Requires [subject] and [message text]')
+                continue
+
+            subject = args[0]
+            message_text = ' '.join(args[1:])
+            post_message(subject, message_text)  # Added post command
+        
+        elif command.startswith('message'):
+            args = command.split(' ')[1:]
+            if len(args) < 1:
+                print('Not enough arguments supplied for message command. Requires [message ID]')
+                continue
         elif command == 'users':
             user_list()
         elif command == 'leave':
             # Call function to leave group
             leave_group(args[0])
-        
-        elif command.startswith('post') or command.startswith('message'):
-            print('This command is not yet implemented')
         else:
             print('Invalid command')
 
@@ -138,6 +151,58 @@ def join_group(username: str) -> int:
 
     return 0
 
+def post_message(subject: str, message_text: str):
+    """
+    @brief  Posts a message on the bulletin board
+    @param  (str) subject: The subject of the message
+    @param  (str) message_text: The content of the message
+    """
+    # Construct the post command
+    post_command = f'post {subject} {message_text}\n'
+
+    # Send the post command to the server
+    try:
+        connection_socket.sendall(post_command.encode('utf-8'))
+    except OSError:
+        print('Unable to post message. You are not connected to a bulletin board server.')
+        return
+
+    # Handle the server's response
+    handle_post_response()
+
+
+def handle_post_response():
+    """
+    @brief  Handles the server's response after posting a message
+    """
+    response = connection_socket.recv(4096).decode('utf-8')
+    print(response)
+
+def message_content(message_id: str):
+    """
+    @brief  Retrieves the content of a message with the given message ID
+    @param  (str) message_id: The ID of the message to retrieve
+    """
+    # Construct the message command
+    message_command = f'message {message_id}\n'
+
+    # Send the message command to the server
+    try:
+        connection_socket.sendall(message_command.encode('utf-8'))
+    except OSError:
+        print('Unable to retrieve message. You are not connected to a bulletin board server.')
+        return
+
+    # Handle the server's response
+    handle_message_response()
+
+def handle_message_response():
+    """
+    @brief  Handles the server's response after retrieving a message
+    """
+    response = connection_socket.recv(4096).decode('utf-8')
+    print(response)
+
 def user_list() -> int:
     # Construct users command
     message = 'users\n'
@@ -185,9 +250,6 @@ def leave_group()-> int:
             print(user)
 
     return 0
-    
-    
-
 
 if __name__ == "__main__":
     sys.exit(main())
