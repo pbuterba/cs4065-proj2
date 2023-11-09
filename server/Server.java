@@ -122,10 +122,9 @@ public class Server implements Runnable {
     }  
 
     // Function to create a new post on the message board
-    public void createPost(String username, String messageText) throws Exception {
+    public void createPost(String username, String subject, String messageText) throws Exception {
         // Create a new message with a unique ID, sender, post date, subject, and content
         int messageID = messages.size() + 1; // Generate a unique ID
-        String subject = messageText; // subject
 
         // Create the message object
         Message newMessage = new Message(Integer.toString(messageID), username, subject, messageText);
