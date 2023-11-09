@@ -72,16 +72,13 @@ public class Server implements Runnable {
             //Take action based on what command was entered
             if(command.equals("join")) {
                 addUser(args.get(0));
-            }
-            else if(command.equals("post")) {
+            } else if(command.equals("post")) {
                 createPost(args.get(0), args.get(1), args.get(2));
-            }
-            else if(command.equals("message")) {
+            } else if(command.equals("message")) {
                 retrieveMessage(args.get(0));
-            else if (command.equals("users")) {
+            } else if (command.equals("users")) {
                 sendUserList();
-            }
-            else if(command.equals("leave")){
+            } else if(command.equals("leave")){
                 removeUser(args.get(0));
             }
 
