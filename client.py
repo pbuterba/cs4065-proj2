@@ -13,6 +13,8 @@ import sys
 # Create global socket variable
 connection_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+client_username = ""
+
 def main() -> int:
     """
     @brief  This is the main function for the Bulletin Board Client
@@ -59,7 +61,7 @@ def main() -> int:
 
             # Call function to join group
             join_group(args[0])
-
+            
         elif command.startswith('post'):
             args = command.split(' ')[1:]
             if len(args) < 2:
@@ -75,9 +77,11 @@ def main() -> int:
             if len(args) < 1:
                 print('Not enough arguments supplied for message command. Requires [message ID]')
                 continue
-
-        elif command.startswith('users') or command == 'leave':
-            print('This command is not yet implemented')
+        elif command == 'users':
+            user_list()
+        elif command == 'leave':
+            # Call function to leave group
+            leave_group(args[0])
         else:
             print('Invalid command')
 
@@ -123,6 +127,7 @@ def join_group(username: str) -> int:
         return 1
 
     print('Successfully joined the group')
+    client_username = username
 
     # Listen for return data
     data_string = ''
@@ -198,6 +203,53 @@ def handle_message_response():
     response = connection_socket.recv(4096).decode('utf-8')
     print(response)
 
+def user_list() -> int:
+    # Construct users command
+    message = 'users\n'
+    
+    # Send users command
+    try:
+        connection_socket.sendall(message.encode('utf-8'))
+    except OSError:
+        print('Unable to list the users of the group.')
+        return 1
+    
+    # Listen for return data
+    data_string = ''
+    while '\n' not in data_string:
+        data_string = data_string + connection_socket.recv(4096).decode('utf-8')
+    
+    # Print the list of data
+    print('List of users: %s', data_string)
+    
+    return 0
+
+def leave_group()-> int:
+    # Construct leave command
+    message = f'leave {client_username}\n'
+    
+    # Send leave command
+    try:
+        connection_socket.sendall(message.encode('utf-8'))
+    except OSError:
+        print('Unable to remove the user from the group.')
+        return 1
+    
+    # Listen for return data
+    data_string = ''
+    while '\n' not in data_string:
+        data_string = data_string + connection_socket.recv(4096).decode('utf-8')
+    
+    # Convert JSON string into a dictionary, dropping the newline character off the end
+    join_data = json.loads(data_string[0:len(data_string) - 1])
+
+    # Print online users
+    if join_data['users']:
+        print('Currently online users:')
+        for user in join_data['users']:
+            print(user)
+
+    return 0
 
 if __name__ == "__main__":
     sys.exit(main())
