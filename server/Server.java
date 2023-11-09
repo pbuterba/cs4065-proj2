@@ -13,6 +13,7 @@ import java.net.*;
 import java.util.*;
 import server.Message;
 import server.User;
+
 public class Server implements Runnable {
     //Static server data structures
     public static ArrayList<User> connectedUsers = new ArrayList<User>();
