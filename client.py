@@ -25,7 +25,7 @@ def main() -> int:
     print('Bulletin Board Client Options: ')
     print('connect [server address] [server connection port] - Connects to a bulletin board server')
     print('join - Joins the message board on the connected server')
-    print('post [subject] [message text] - Posts a message on the bulletin board')
+    print('post [subject]: [message text] - Posts a message on the bulletin board with the given subject')
     print('users - Lists the users currently on the message board')
     print('leave - Leaves the message board')
     print('message [message ID] - Gets the content of a message')
@@ -76,14 +76,12 @@ def main() -> int:
             join_group(args[0])
 
         elif command.startswith('post'):
-            args = command.split(' ')[1:]
+            args = ' '.join(command.split(' ')[1:]).split(': ')
             if len(args) < 2:
-                print('Not enough arguments supplied for post command. Requires [subject] and [message text]')
+                print('Not enough arguments supplied for post command. Format [subject]: [message text]')
                 continue
 
-            subject = args[0]
-            message_text = ' '.join(args[1:])
-            post_message(subject, message_text)
+            post_message(f'{args[0]}: {args[1]}')
         
         elif command.startswith('message'):
             args = command.split(' ')[1:]
@@ -110,7 +108,11 @@ def listen_to_server():
         data_string = data_string + connection_socket.recv(4096).decode('utf-8')
 
     # Convert JSON string into a dictionary, dropping the newline character off the end
-    server_data = json.loads(data_string[0:len(data_string) - 1])
+    try:
+        server_data = json.loads(data_string[0:len(data_string) - 1])
+    except json.decoder.JSONDecodeError:
+        print(f'Invalid server response sent:\n{data_string[0:len(data_string) - 1]}')
+        sys.exit(1)
 
     # Loop until server sends exit command
     while server_data['message_type'] != 'exit':
@@ -121,17 +123,22 @@ def listen_to_server():
                 print('Currently online users: ')
                 for user in server_data['users']:
                     print(user)
+                print()
             if server_data['messages']:
                 print('Previously sent messages: ')
                 for message in server_data['messages']:
                     print(message)
+                print()
 
         # Listen for server data
         data_string = ''
         while '\n' not in data_string:
             data_string = data_string + connection_socket.recv(4096).decode('utf-8')
-        server_data = json.loads(data_string[0:len(data_string) - 1])
-
+        try:
+            server_data = json.loads(data_string[0:len(data_string) - 1])
+        except json.decoder.JSONDecodeError:
+            print(f'Invalid server response sent:\n{data_string[0:len(data_string) - 1]}')
+            sys.exit(1)
 
 def client_connect(host: str, port: int) -> int:
     """
@@ -178,14 +185,14 @@ def join_group(username: str):
     client_username = username
 
 
-def post_message(subject: str, message_text: str):
+def post_message(everything: str):
     """
     @brief  Posts a message on the bulletin board
     @param  (str) subject: The subject of the message
     @param  (str) message_text: The content of the message
     """
     # Construct the post command
-    post_command = f'post {client_username} {subject} {message_text}\n'
+    post_command = f'post {client_username} {everything}\n'
 
     # Send the post command to the server
     try:
@@ -201,7 +208,6 @@ def message_content(message_id: str):
     """
     # Construct the message command
     message_command = f'message {message_id}\n'
-    print(f'Sending command {message_command}')
 
     # Send the message command to the server
     try:
@@ -224,7 +230,6 @@ def user_list():
 def leave_group():
     # Construct leave command
     message = f'leave {client_username}\n'
-    print(f'Sending command leave {client_username}')
     
     # Send leave command
     try:
@@ -234,7 +239,6 @@ def leave_group():
 
 
 def send_exit_command():
-    print('Sending exit command')
     connection_socket.sendall('exit\n'.encode('utf-8'))
 
 

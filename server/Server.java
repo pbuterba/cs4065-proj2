@@ -73,9 +73,33 @@ public class Server implements Runnable {
             if(command.equals("join")) {
                 addUser(args.get(0));
             } else if(command.equals("post")) {
-                createPost(args.get(0), args.get(1), args.get(2));
+                //Get username
+                String username = args.get(0);
+                args.remove(0);
+                
+                //Get message subject and content
+                String subject = "";
+                String messageContent = "";
+                boolean delimiterFound = false;
+                for(String word : args) {
+                    if(delimiterFound) {
+                        messageContent += word + " ";
+                    } else {
+                        if(word.contains(":")) {
+                            subject += word.substring(0, word.length() - 1);
+                            delimiterFound = true;
+                        } else {
+                            subject += word + " ";
+                        }
+                    }
+                }
+
+                //Remove space at the end of message
+                messageContent = messageContent.substring(0, messageContent.length() - 1);
+
+                //Call createPost function
+                createPost(username, subject, messageContent);
             } else if(command.equals("message")) {
-                System.out.println("Message command detected");
                 retrieveMessage(args.get(0));
             } else if (command.equals("users")) {
                 sendUserList();
@@ -113,10 +137,10 @@ public class Server implements Runnable {
 
         //Get last two messages sent
         if(messages.size() >= 2) {
-            payload += messages.get(messages.size() - 2).toString() + ",";
+            payload += "\"" + messages.get(messages.size() - 2).toString() + "\",";
         }
         if(messages.size() >= 1) {
-            payload += messages.get(messages.size() - 1).toString();
+            payload += "\"" + messages.get(messages.size() - 1).toString() + "\"";
         }
         payload += "]}\n";
 
@@ -157,14 +181,11 @@ public class Server implements Runnable {
     
     // Function to retrieve the content of a specific message by its ID
     public void retrieveMessage(String messageID) throws Exception {
-        System.out.println("Searching for message " + messageID);
         // Find the message with the given ID
         Message targetMessage = null;
         for(Message message : messages) {
-            System.out.println("Checking message " + message.getId());
             if(message.getId().equals(messageID)) {
                 targetMessage = message;
-                System.out.println("Message found");
                 break;
             }
         }
@@ -173,15 +194,12 @@ public class Server implements Runnable {
         if(targetMessage != null) {
             // Send the message content to the client
             String messageContent = targetMessage.getContent();
-            System.out.println("Adding message content to payload");
             payload += messageContent;
         } else {
             // Notify the client that the message was not found
-            System.out.println("Adding error message to payload");
             payload += "Message with ID " + messageID + " not found";
         }
         payload += "\"}\n";
-        System.out.println("Sending payload: " + payload);
         sendToClient(socket, payload);
     }
 
@@ -199,12 +217,10 @@ public class Server implements Runnable {
 
     //Function for removing user from the group
     public void removeUser(String username) throws Exception {
-        System.out.println("Started removeUser function for username " + username);
         User user = null;
         
         // Ensure that the user is part of the connected users
         for(User users : connectedUsers) {
-            System.out.println("Checking user: " + users.getUsername());
             if(users.getUsername().equals(username)) {
                 user = users;
                 break;
