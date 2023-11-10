@@ -9,6 +9,7 @@ Bulletin Board Client
 import json
 import socket
 import sys
+import threading
 
 # Create global socket variable
 connection_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -30,6 +31,9 @@ def main() -> int:
     print('message [message ID] - Gets the content of a message')
     print('exit - Leaves the message board (if applicable) and exits the client program')
 
+    # Create listen_to_sever thread
+    server_listen_thread = threading.Thread(target=listen_to_server)
+
     # Loop until command is "exit"
     while True:
         # Get next command
@@ -38,6 +42,10 @@ def main() -> int:
         # Check command
         if command == 'exit':
             print('Exiting')
+            send_exit_command()
+            server_listen_thread.join()
+            connection_socket.shutdown(socket.SHUT_RDWR)
+            connection_socket.close()
             return 0
         elif command.startswith('connect'):
             # Get command arguments
@@ -52,6 +60,10 @@ def main() -> int:
             except ValueError:
                 print(f'{args[1]} is not a valid port number')
                 continue
+
+            # Start server listening thread
+            server_listen_thread.start()
+
         elif command.startswith('join'):
             # Get command arguments
             args = command.split(' ')[1:]
@@ -61,7 +73,7 @@ def main() -> int:
 
             # Call function to join group
             join_group(args[0])
-            
+
         elif command.startswith('post'):
             args = command.split(' ')[1:]
             if len(args) < 2:
@@ -70,7 +82,7 @@ def main() -> int:
 
             subject = args[0]
             message_text = ' '.join(args[1:])
-            post_message(subject, message_text)  # Added post command
+            post_message(subject, message_text)
         
         elif command.startswith('message'):
             args = command.split(' ')[1:]
@@ -84,6 +96,39 @@ def main() -> int:
             leave_group()
         else:
             print('Invalid command')
+
+
+def listen_to_server():
+    """
+    @brief      Listens to the socket to process any incoming messages from the sever
+    """
+    # Listen for server data
+    data_string = ''
+    while '\n' not in data_string:
+        data_string = data_string + connection_socket.recv(4096).decode('utf-8')
+
+    # Convert JSON string into a dictionary, dropping the newline character off the end
+    server_data = json.loads(data_string[0:len(data_string) - 1])
+
+    # Loop until server sends exit command
+    while server_data['message_type'] != 'exit':
+        # Listen for server data
+        data_string = ''
+        while '\n' not in data_string:
+            data_string = data_string + connection_socket.recv(4096).decode('utf-8')
+        server_data = json.loads(data_string[0:len(data_string) - 1])
+
+        if server_data['message_type'] == 'notification':
+            print(server_data['message'])
+        elif server_data['message_type'] == 'join_data':
+            if server_data['users']:
+                print('Currently online users: ')
+                for user in server_data['users']:
+                    print(user)
+            if server_data['messages']:
+                print('Previously sent messages: ')
+                for message in server_data['messages']:
+                    print(message)
 
 
 def client_connect(host: str, port: int) -> int:
@@ -256,6 +301,10 @@ def leave_group() -> int:
             print(user)
 
     return 0
+
+
+def send_exit_command():
+    connection_socket.sendall('exit'.encode('utf-8'))
 
 
 if __name__ == "__main__":

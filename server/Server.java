@@ -84,6 +84,9 @@ public class Server implements Runnable {
 
             dataLine = readFromClient(socket);
         }
+
+        String payload = "{\"message_type\": \"exit\"}";
+        sendToClient(socket, payload);
         
         //Close the socket
         System.out.println(socket.getRemoteSocketAddress() + " disconnected");
@@ -95,11 +98,12 @@ public class Server implements Runnable {
         System.out.println(username + " issued join command");
 
         //Gather information to send to the new user formatted as JSON string
-        String payload = "{\"users\": [";
+        String payload = "{\"message_type\": \"join_data\",";
+        payload += "\"users\": [";
         
         //Get a list of all currently connected users
         for(User user : connectedUsers) {
-            payload = payload + "\"" + user.getUsername() + "\",";
+            payload += "\"" + user.getUsername() + "\",";
         }
         if(connectedUsers.size() > 0) {
             payload = payload.substring(0, payload.length() - 1); //Remove trailing comma
@@ -108,20 +112,21 @@ public class Server implements Runnable {
 
         //Get last two messages sent
         if(messages.size() >= 2) {
-            payload = payload + messages.get(messages.size() - 2).toJsonString() + ",";
+            payload += messages.get(messages.size() - 2).toJsonString() + ",";
         }
         if(messages.size() >= 1) {
-            payload = payload + messages.get(messages.size() - 1).toJsonString();
+            payload += messages.get(messages.size() - 1).toJsonString();
         }
-        payload = payload + "]}\n";
+        payload += "]}\n";
 
         //Send payload data to client
         sendToClient(socket, payload);
         
         //Inform all other connected clients that the user has joined
-        String message = username + " joined the group\n";
+        payload = "{\"message_type\": \"notification\",";
+        payload += "\"message\": \"" + username + " joined the group\"}\n";
         for(User connectedUser : connectedUsers) {
-            sendToClient(connectedUser.getSocket(), message);
+            sendToClient(connectedUser.getSocket(), payload);
         }
 
         //Add the newly connected user to the server's list of users
@@ -142,7 +147,9 @@ public class Server implements Runnable {
 
         // Broadcast the new message to all connected clients
         String messageContent = newMessage.toJsonString();
-        for (User connectedUser : connectedUsers) {
+        String payload = "{\"message_type\": \"notification\",";
+        payload += "\"message\": \"" + payload + "\"}\n";
+        for(User connectedUser : connectedUsers) {
             sendToClient(connectedUser.getSocket(), messageContent);
         }
     }
@@ -151,47 +158,45 @@ public class Server implements Runnable {
     public void retrieveMessage(String messageID) throws Exception {
         // Find the message with the given ID
         Message targetMessage = null;
-        for (Message message : messages) {
-            if (message.getId().equals(messageID)) {
+        for(Message message : messages) {
+            if(message.getId().equals(messageID)) {
                 targetMessage = message;
                 break;
             }
         }
-        if (targetMessage != null) {
+        String payload = "{\"message_type\": \"notification\", ";
+        payload += "\"message\": \"";
+        if(targetMessage != null) {
             // Send the message content to the client
             String messageContent = targetMessage.toJsonString();
-            sendToClient(socket, messageContent);
+            payload += messageContent;
         } else {
             // Notify the client that the message was not found
-            String errorMessage = "Message with ID " + messageID + " not found";
-            sendToClient(socket, errorMessage);
+            payload += "Message with ID " + messageID + " not found";
         }
+        payload += "\"}\n";
+        sendToClient(socket, payload);
     }
 
     //Function for outputting list of users.
-    public void sendUserList() throws Exception{
+    public void sendUserList() throws Exception {
         //Get a list of all currently connected users
-        String userList = "";
+        String payload = "{\"message_type\": \"notification\", \"message\": \"Current list of users: ";
         for(User users : connectedUsers) {
-            userList = userList + users.getUsername() + ",";
+            payload += users.getUsername() + ",";
         }
-        userList = userList.substring(0, userList.length() - 1) + "\n"; //Replace trailing comma with newline
-
-        //Store the list of usernames in a message
-        String message = "Current list of users: " + userList;
-        //Inform all connected clients of the list of users
-        for(User connectedUser : connectedUsers) {
-            sendToClient(connectedUser.getSocket(), message);
-        }
+        payload = payload.substring(0, payload.length() - 1);  //Remove trailing comma
+        payload += "\"}\n";
+        sendToClient(socket, payload);
     }
 
     //Function for removing user from the group
-    public void removeUser(String username) throws Exception{
-        
+    public void removeUser(String username) throws Exception {
         User user = null;
-        //Ensure that the user is part of the connected users
+        
+        // Ensure that the user is part of the connected users
         for(User users:connectedUsers) {
-            if (users.getUsername() == username) {
+            if(users.getUsername() == username) {
                 user = users;
                 break;
             }
@@ -201,34 +206,27 @@ public class Server implements Runnable {
             throw new IllegalArgumentException("User not found in group.");
         }
         
+        String payload = "{\"message_type\": \"notification\", \"message\": \"";
+        
         //Store the username into the message
-        String message = user.getUsername() + " left the group";
+        payload += user.getUsername() + " left the group";
+        payload += "\"}\n";
 
         //Print that the user is leaving the group
         System.out.println(user.getUsername() + " is leaving the group. ");
         
         //Remove the user from connectUsers
         connectedUsers.remove(user);
-      
-        //Gather information to send to the new user formatted as JSON string
-        String payload = "{\"users\": [";
-        
-        //Get a list of all currently connected users after removing user
-        for(User users : connectedUsers) {
-            payload = payload + "\"" + users.getUsername() + "\",";
-        }
-        if(connectedUsers.size() > 0) {
-            payload = payload.substring(0, payload.length() - 1); //Remove trailing comma
-        }
-        payload += "]";
-
-        //Send user list to client
-        sendToClient(socket, payload);
 
         //Inform all other connected clients that the user has left the group
         for(User connectedUser : connectedUsers) {
-            sendToClient(connectedUser.getSocket(), message);
+            sendToClient(connectedUser.getSocket(), payload);
         }
+        
+        payload = "{\"message_type\": \"notification\", \"message\": \"Successfully left the group\"}\n";
+
+        //Send user list to client
+        sendToClient(socket, payload);
     }
 
     //Static helper functions
