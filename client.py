@@ -44,10 +44,8 @@ def main() -> int:
             print('Exiting')
             send_exit_command()
             server_listen_thread.join()
-            print('Successfully returned from server listen thread')
             connection_socket.shutdown(socket.SHUT_RDWR)
             connection_socket.close()
-            print('Closed socket. Shutting down client')
             return 0
         elif command.startswith('connect'):
             # Get command arguments
@@ -133,8 +131,6 @@ def listen_to_server():
         while '\n' not in data_string:
             data_string = data_string + connection_socket.recv(4096).decode('utf-8')
         server_data = json.loads(data_string[0:len(data_string) - 1])
-
-    print('Stopped listening to server')
 
 
 def client_connect(host: str, port: int) -> int:

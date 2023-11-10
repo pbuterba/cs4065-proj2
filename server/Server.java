@@ -85,10 +85,8 @@ public class Server implements Runnable {
 
             dataLine = readFromClient(socket);
         }
-        System.out.println("Exit command received");
 
         String payload = "{\"message_type\": \"exit\"}\n";
-        System.out.println("Sending exit notification to client");
         sendToClient(socket, payload);
         
         //Close the socket
