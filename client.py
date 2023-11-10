@@ -12,8 +12,8 @@ import sys
 
 # Create global socket variable
 connection_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
 client_username = ""
+
 
 def main() -> int:
     """
@@ -127,6 +127,7 @@ def join_group(username: str) -> int:
         return 1
 
     print('Successfully joined the group')
+    global client_username
     client_username = username
 
     # Listen for return data
@@ -150,6 +151,7 @@ def join_group(username: str) -> int:
             print(message)
 
     return 0
+
 
 def post_message(subject: str, message_text: str):
     """
@@ -178,6 +180,7 @@ def handle_post_response():
     response = connection_socket.recv(4096).decode('utf-8')
     print(response)
 
+
 def message_content(message_id: str):
     """
     @brief  Retrieves the content of a message with the given message ID
@@ -196,12 +199,14 @@ def message_content(message_id: str):
     # Handle the server's response
     handle_message_response()
 
+
 def handle_message_response():
     """
     @brief  Handles the server's response after retrieving a message
     """
     response = connection_socket.recv(4096).decode('utf-8')
     print(response)
+
 
 def user_list() -> int:
     # Construct users command
@@ -224,7 +229,8 @@ def user_list() -> int:
     
     return 0
 
-def leave_group()-> int:
+
+def leave_group() -> int:
     # Construct leave command
     message = f'leave {client_username}\n'
     
@@ -250,6 +256,7 @@ def leave_group()-> int:
             print(user)
 
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())
