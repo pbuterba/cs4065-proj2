@@ -75,6 +75,7 @@ public class Server implements Runnable {
             } else if(command.equals("post")) {
                 createPost(args.get(0), args.get(1), args.get(2));
             } else if(command.equals("message")) {
+                System.out.println("Message command detected");
                 retrieveMessage(args.get(0));
             } else if (command.equals("users")) {
                 sendUserList();
@@ -84,8 +85,10 @@ public class Server implements Runnable {
 
             dataLine = readFromClient(socket);
         }
+        System.out.println("Exit command received");
 
-        String payload = "{\"message_type\": \"exit\"}";
+        String payload = "{\"message_type\": \"exit\"}\n";
+        System.out.println("Sending exit notification to client");
         sendToClient(socket, payload);
         
         //Close the socket
@@ -112,10 +115,10 @@ public class Server implements Runnable {
 
         //Get last two messages sent
         if(messages.size() >= 2) {
-            payload += messages.get(messages.size() - 2).toJsonString() + ",";
+            payload += messages.get(messages.size() - 2).toString() + ",";
         }
         if(messages.size() >= 1) {
-            payload += messages.get(messages.size() - 1).toJsonString();
+            payload += messages.get(messages.size() - 1).toString();
         }
         payload += "]}\n";
 
@@ -146,21 +149,24 @@ public class Server implements Runnable {
         messages.add(newMessage);
 
         // Broadcast the new message to all connected clients
-        String messageContent = newMessage.toJsonString();
+        String messageContent = newMessage.toString();
         String payload = "{\"message_type\": \"notification\",";
-        payload += "\"message\": \"" + payload + "\"}\n";
+        payload += "\"message\": \"" + messageContent + "\"}\n";
         for(User connectedUser : connectedUsers) {
-            sendToClient(connectedUser.getSocket(), messageContent);
+            sendToClient(connectedUser.getSocket(), payload);
         }
     }
     
     // Function to retrieve the content of a specific message by its ID
     public void retrieveMessage(String messageID) throws Exception {
+        System.out.println("Searching for message " + messageID);
         // Find the message with the given ID
         Message targetMessage = null;
         for(Message message : messages) {
+            System.out.println("Checking message " + message.getId());
             if(message.getId().equals(messageID)) {
                 targetMessage = message;
+                System.out.println("Message found");
                 break;
             }
         }
@@ -168,13 +174,16 @@ public class Server implements Runnable {
         payload += "\"message\": \"";
         if(targetMessage != null) {
             // Send the message content to the client
-            String messageContent = targetMessage.toJsonString();
+            String messageContent = targetMessage.getContent();
+            System.out.println("Adding message content to payload");
             payload += messageContent;
         } else {
             // Notify the client that the message was not found
+            System.out.println("Adding error message to payload");
             payload += "Message with ID " + messageID + " not found";
         }
         payload += "\"}\n";
+        System.out.println("Sending payload: " + payload);
         sendToClient(socket, payload);
     }
 
@@ -192,11 +201,13 @@ public class Server implements Runnable {
 
     //Function for removing user from the group
     public void removeUser(String username) throws Exception {
+        System.out.println("Started removeUser function for username " + username);
         User user = null;
         
         // Ensure that the user is part of the connected users
-        for(User users:connectedUsers) {
-            if(users.getUsername() == username) {
+        for(User users : connectedUsers) {
+            System.out.println("Checking user: " + users.getUsername());
+            if(users.getUsername().equals(username)) {
                 user = users;
                 break;
             }

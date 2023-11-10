@@ -44,8 +44,10 @@ def main() -> int:
             print('Exiting')
             send_exit_command()
             server_listen_thread.join()
+            print('Successfully returned from server listen thread')
             connection_socket.shutdown(socket.SHUT_RDWR)
             connection_socket.close()
+            print('Closed socket. Shutting down client')
             return 0
         elif command.startswith('connect'):
             # Get command arguments
@@ -56,13 +58,14 @@ def main() -> int:
 
             # Verify that port number is an integer and call function to join group
             try:
-                client_connect(args[0], int(args[1]))
+                connection_failed = client_connect(args[0], int(args[1]))
             except ValueError:
                 print(f'{args[1]} is not a valid port number')
                 continue
 
             # Start server listening thread
-            server_listen_thread.start()
+            if not connection_failed:
+                server_listen_thread.start()
 
         elif command.startswith('join'):
             # Get command arguments
@@ -89,6 +92,7 @@ def main() -> int:
             if len(args) < 1:
                 print('Not enough arguments supplied for message command. Requires [message ID]')
                 continue
+            message_content(args[0])
         elif command == 'users':
             user_list()
         elif command == 'leave':
@@ -112,12 +116,6 @@ def listen_to_server():
 
     # Loop until server sends exit command
     while server_data['message_type'] != 'exit':
-        # Listen for server data
-        data_string = ''
-        while '\n' not in data_string:
-            data_string = data_string + connection_socket.recv(4096).decode('utf-8')
-        server_data = json.loads(data_string[0:len(data_string) - 1])
-
         if server_data['message_type'] == 'notification':
             print(server_data['message'])
         elif server_data['message_type'] == 'join_data':
@@ -129,6 +127,14 @@ def listen_to_server():
                 print('Previously sent messages: ')
                 for message in server_data['messages']:
                     print(message)
+
+        # Listen for server data
+        data_string = ''
+        while '\n' not in data_string:
+            data_string = data_string + connection_socket.recv(4096).decode('utf-8')
+        server_data = json.loads(data_string[0:len(data_string) - 1])
+
+    print('Stopped listening to server')
 
 
 def client_connect(host: str, port: int) -> int:
@@ -153,7 +159,7 @@ def client_connect(host: str, port: int) -> int:
     return 0
 
 
-def join_group(username: str) -> int:
+def join_group(username: str):
     """
     @brief  Joins the group using the specified username
     @param  (str) username: The name with which to join the group
@@ -169,33 +175,11 @@ def join_group(username: str) -> int:
         connection_socket.sendall(message.encode('utf-8'))
     except OSError:
         print('Unable to join group. You are not connected to a bulletin board server.')
-        return 1
+        return
 
     print('Successfully joined the group')
     global client_username
     client_username = username
-
-    # Listen for return data
-    data_string = ''
-    while '\n' not in data_string:
-        data_string = data_string + connection_socket.recv(4096).decode('utf-8')
-
-    # Convert JSON string into a dictionary, dropping the newline character off the end
-    join_data = json.loads(data_string[0:len(data_string) - 1])
-
-    # Print online users
-    if join_data['users']:
-        print('Currently online users:')
-        for user in join_data['users']:
-            print(user)
-
-    # Print last two messages
-    if join_data['messages']:
-        print('Most recent messages:')
-        for message in join_data['messages']:
-            print(message)
-
-    return 0
 
 
 def post_message(subject: str, message_text: str):
@@ -205,25 +189,13 @@ def post_message(subject: str, message_text: str):
     @param  (str) message_text: The content of the message
     """
     # Construct the post command
-    post_command = f'post {subject} {message_text}\n'
+    post_command = f'post {client_username} {subject} {message_text}\n'
 
     # Send the post command to the server
     try:
         connection_socket.sendall(post_command.encode('utf-8'))
     except OSError:
         print('Unable to post message. You are not connected to a bulletin board server.')
-        return
-
-    # Handle the server's response
-    handle_post_response()
-
-
-def handle_post_response():
-    """
-    @brief  Handles the server's response after posting a message
-    """
-    response = connection_socket.recv(4096).decode('utf-8')
-    print(response)
 
 
 def message_content(message_id: str):
@@ -233,27 +205,16 @@ def message_content(message_id: str):
     """
     # Construct the message command
     message_command = f'message {message_id}\n'
+    print(f'Sending command {message_command}')
 
     # Send the message command to the server
     try:
         connection_socket.sendall(message_command.encode('utf-8'))
     except OSError:
         print('Unable to retrieve message. You are not connected to a bulletin board server.')
-        return
-
-    # Handle the server's response
-    handle_message_response()
 
 
-def handle_message_response():
-    """
-    @brief  Handles the server's response after retrieving a message
-    """
-    response = connection_socket.recv(4096).decode('utf-8')
-    print(response)
-
-
-def user_list() -> int:
+def user_list():
     # Construct users command
     message = 'users\n'
     
@@ -262,49 +223,23 @@ def user_list() -> int:
         connection_socket.sendall(message.encode('utf-8'))
     except OSError:
         print('Unable to list the users of the group.')
-        return 1
-    
-    # Listen for return data
-    data_string = ''
-    while '\n' not in data_string:
-        data_string = data_string + connection_socket.recv(4096).decode('utf-8')
-    
-    # Print the list of data
-    print('List of users: %s', data_string)
-    
-    return 0
 
 
-def leave_group() -> int:
+def leave_group():
     # Construct leave command
     message = f'leave {client_username}\n'
+    print(f'Sending command leave {client_username}')
     
     # Send leave command
     try:
         connection_socket.sendall(message.encode('utf-8'))
     except OSError:
         print('Unable to remove the user from the group.')
-        return 1
-    
-    # Listen for return data
-    data_string = ''
-    while '\n' not in data_string:
-        data_string = data_string + connection_socket.recv(4096).decode('utf-8')
-    
-    # Convert JSON string into a dictionary, dropping the newline character off the end
-    join_data = json.loads(data_string[0:len(data_string) - 1])
-
-    # Print online users
-    if join_data['users']:
-        print('Currently online users:')
-        for user in join_data['users']:
-            print(user)
-
-    return 0
 
 
 def send_exit_command():
-    connection_socket.sendall('exit'.encode('utf-8'))
+    print('Sending exit command')
+    connection_socket.sendall('exit\n'.encode('utf-8'))
 
 
 if __name__ == "__main__":
