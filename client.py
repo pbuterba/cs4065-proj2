@@ -10,11 +10,11 @@ import json
 import socket
 import sys
 import threading
-import time
+from time import sleep
 
 # Create global socket variable
 connection_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_username = ""
+client_usernames = ['', '', '', '', '']
 
 
 def main() -> int:
@@ -25,11 +25,11 @@ def main() -> int:
     # Print menu options
     print('Bulletin Board Client Options: ')
     print('connect [server address] [server connection port] - Connects to a bulletin board server')
-    print('join - Joins the message board on the connected server')
-    print('post [subject]: [message text] - Posts a message on the bulletin board with the given subject')
-    print('users - Lists the users currently on the message board')
-    print('leave - Leaves the message board')
-    print('message [message ID] - Gets the content of a message')
+    print('groupjoin [group ID] - Joins the specified group')
+    print('grouppost [group ID] [subject]: [message text] - Posts a message to the specified group with the given subject')
+    print('groupusers [group ID] - Lists the users currently on the message board')
+    print('groupleave [group ID] - Leaves the message board')
+    print('groupmessage [group ID] [message ID] - Gets the content of a message')
     print('exit - Leaves the message board (if applicable) and exits the client program')
 
     # Create listen_to_sever thread
@@ -42,9 +42,21 @@ def main() -> int:
 
         # Check command
         if command == 'exit':
-            if client_username:
-                leave_group()
-                time.sleep(1)
+            if client_usernames[0]:
+                leave_group(0)
+                sleep(1)
+            if client_usernames[1]:
+                leave_group(1)
+                sleep(1)
+            if client_usernames[2]:
+                leave_group(2)
+                sleep(1)
+            if client_usernames[3]:
+                leave_group(3)
+                sleep(1)
+            if client_usernames[4]:
+                leave_group(4)
+                sleep(1)
             print('Exiting')
             send_exit_command()
             server_listen_thread.join()
@@ -68,17 +80,21 @@ def main() -> int:
             # Start server listening thread
             if not connection_failed:
                 server_listen_thread.start()
-
-        elif command.startswith('join'):
+        elif command.startswith('groupjoin'):
             # Get command arguments
             args = command.split(' ')[1:]
-            if len(args) < 1:
-                print('Not enough arguments specified for join command. Requires [username]')
+            if len(args) < 2:
+                print('Not enough arguments specified for groupjoin command. Requires [group ID] and [username]')
+                continue
+            if not check_valid_group_id(args[0]):
+                print('Invalid group ID specified. Must be between 1 and 5')
+                continue
+            if check_joined_group_id(args[0]):
+                print(f'You cannot join group {args[0]} because you are already in that group')
                 continue
 
             # Call function to join group
-            join_group(args[0])
-
+            join_group(args[0], args[1])
         elif command.startswith('post'):
             args = ' '.join(command.split(' ')[1:]).split(': ')
             if len(args) < 2:
@@ -86,18 +102,37 @@ def main() -> int:
                 continue
 
             post_message(f'{args[0]}: {args[1]}')
-        
         elif command.startswith('message'):
             args = command.split(' ')[1:]
             if len(args) < 1:
                 print('Not enough arguments supplied for message command. Requires [message ID]')
                 continue
             message_content(args[0])
-        elif command == 'users':
-            user_list()
-        elif command == 'leave':
+        elif command.startswith('groupusers'):
+            args = command.split(' ')[1:]
+            if len(args) < 1:
+                print('Not enough arguments specified for groupusers command. Requires [group ID]')
+                continue
+            if not check_valid_group_id(args[0]):
+                print('Invalid group ID specified. Must be between 1 and 5')
+                continue
+            if not check_joined_group_id(args[0]):
+                print(f'You cannot see the users in group {args[0]} because you are not a member of that group')
+                continue
+            user_list(args[0])
+        elif command.startswith('groupleave'):
+            args = command.split(' ')[1:]
+            if len(args) < 1:
+                print('Not enough arguments specified for groupleave command. Requires [group ID]')
+                continue
+            if not check_valid_group_id(args[0]):
+                print('Invalid group ID specified. Must be between 1 and 5')
+                continue
+            if not check_joined_group_id(args[0]):
+                print(f'You cannot leave group {args[0]} because you are not a member of that group')
+                continue
             # Call function to leave group
-            leave_group()
+            leave_group(args[0])
         else:
             print('Invalid command')
 
@@ -122,6 +157,11 @@ def listen_to_server():
     while server_data['message_type'] != 'exit':
         if server_data['message_type'] == 'notification':
             print(server_data['message'])
+        elif server_data['message_type'] == 'connection_data':
+            if server_data['groups']:
+                for group in server_data['groups']:
+                    print(group)
+                print()
         elif server_data['message_type'] == 'join_data':
             if server_data['users']:
                 print('Currently online users: ')
@@ -167,16 +207,17 @@ def client_connect(host: str, port: int) -> int:
     return 0
 
 
-def join_group(username: str):
+def join_group(group_id: str, username: str):
     """
     @brief  Joins the group using the specified username
+    @param  (str) group_id: The ID of the group to join
     @param  (str) username: The name with which to join the group
     @return: (int)
             - 0 if successful group join
             - 1 otherwise
     """
     # Construct join command
-    message = f'join {username}\n'
+    message = f'groupjoin {group_id} {username}\n'
 
     # Send join command
     try:
@@ -186,15 +227,14 @@ def join_group(username: str):
         return
 
     print('Successfully joined the group')
-    global client_username
-    client_username = username
+    global client_usernames
+    client_usernames[int(group_id) - 1] = username
 
 
 def post_message(everything: str):
     """
     @brief  Posts a message on the bulletin board
-    @param  (str) subject: The subject of the message
-    @param  (str) message_text: The content of the message
+    @param  (str) everything: All the data to send to the server
     """
     # Construct the post command
     post_command = f'post {client_username} {everything}\n'
@@ -221,9 +261,13 @@ def message_content(message_id: str):
         print('Unable to retrieve message. You are not connected to a bulletin board server.')
 
 
-def user_list():
+def user_list(group_id: str):
+    """
+    @brief  Retrieves a list of users from the server
+    @param  (str) group_id: The ID of the group from which to get the user list
+    """
     # Construct users command
-    message = 'users\n'
+    message = f'groupusers {group_id}\n'
     
     # Send users command
     try:
@@ -232,11 +276,11 @@ def user_list():
         print('Unable to list the users of the group.')
 
 
-def leave_group():
-    global client_username
+def leave_group(group_id: str):
+    global client_usernames
 
     # Construct leave command
-    message = f'leave {client_username}\n'
+    message = f'groupleave {group_id} {client_usernames[int(group_id) - 1]}\n'
     
     # Send leave command
     try:
@@ -246,7 +290,17 @@ def leave_group():
         return
 
     # Clear client_username variable so that the client knows that it is not in the group anymore
-    client_username = ''
+    client_usernames[int(group_id) - 1] = ''
+
+
+def check_valid_group_id(group_id: str) -> bool:
+    group_id_int = int(group_id)
+    return group_id_int > 0 and group_id_int < 6
+
+
+def check_joined_group_id(group_id: str) -> bool:
+    group_id_int = int(group_id)
+    return bool(client_usernames[group_id_int - 1])
 
 
 def send_exit_command():

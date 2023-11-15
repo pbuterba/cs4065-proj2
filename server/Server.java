@@ -16,8 +16,20 @@ import server.User;
 
 public class Server implements Runnable {
     //Static server data structures
-    public static ArrayList<User> connectedUsers = new ArrayList<User>();
-    public static ArrayList<Message> messages = new ArrayList<Message>();
+
+    //User lists
+    public static ArrayList<User> group1Users = new ArrayList<User>();
+    public static ArrayList<User> group2Users = new ArrayList<User>();
+    public static ArrayList<User> group3Users = new ArrayList<User>();
+    public static ArrayList<User> group4Users = new ArrayList<User>();
+    public static ArrayList<User> group5Users = new ArrayList<User>();
+    
+    //Message lists
+    public static ArrayList<Message> group1Messages = new ArrayList<Message>();
+    public static ArrayList<Message> group2Messages = new ArrayList<Message>();
+    public static ArrayList<Message> group3Messages = new ArrayList<Message>();
+    public static ArrayList<Message> group4Messages = new ArrayList<Message>();
+    public static ArrayList<Message> group5Messages = new ArrayList<Message>();
     
     //Field for the client connection socket (used in threads)
     private Socket socket;
@@ -55,6 +67,9 @@ public class Server implements Runnable {
     }
 
     private void waitForClientData() throws Exception {
+        //Send connection data to client
+        String payload = "{\"message_type\": \"connection_data\", \"groups\": [\"Group 1\", \"Group 2\", \"Group 3\", \"Group 4\", \"Group 5\"]}\n";
+        sendToClient(socket, payload);
 
         //Get line of text sent from client
         String dataLine = readFromClient(socket);
@@ -70,9 +85,9 @@ public class Server implements Runnable {
             }
 
             //Take action based on what command was entered
-            if(command.equals("join")) {
-                addUser(args.get(0));
-            } else if(command.equals("post")) {
+            if(command.equals("groupjoin")) {
+                addUser(args.get(0), args.get(1));
+            } /*else if(command.equals("post")) {
                 //Get username
                 String username = args.get(0);
                 args.remove(0);
@@ -101,16 +116,16 @@ public class Server implements Runnable {
                 createPost(username, subject, messageContent);
             } else if(command.equals("message")) {
                 retrieveMessage(args.get(0));
-            } else if (command.equals("users")) {
-                sendUserList();
-            } else if(command.equals("leave")){
-                removeUser(args.get(0));
+            }*/ else if (command.equals("groupusers")) {
+                sendUserList(args.get(0));
+            } else if(command.equals("groupleave")){
+                removeUser(args.get(0), args.get(1));
             }
 
             dataLine = readFromClient(socket);
         }
 
-        String payload = "{\"message_type\": \"exit\"}\n";
+        payload = "{\"message_type\": \"exit\"}\n";
         sendToClient(socket, payload);
         
         //Close the socket
@@ -119,12 +134,32 @@ public class Server implements Runnable {
     }
 
     //Function for user joining the group
-    public void addUser(String username) throws Exception {
-        System.out.println(username + " issued join command");
+    public void addUser(String groupId, String username) throws Exception {
+        System.out.println(username + " joined group " + groupId);
 
         //Gather information to send to the new user formatted as JSON string
         String payload = "{\"message_type\": \"join_data\",";
         payload += "\"users\": [";
+
+        //Get user and message lists
+        ArrayList<User> connectedUsers;
+        ArrayList<Message> groupMessages;
+        if(groupId.equals("1")) {
+            connectedUsers = group1Users;
+            groupMessages = group1Messages;
+        } else if(groupId.equals("2")) {
+            connectedUsers = group2Users;
+            groupMessages = group2Messages;
+        } else if(groupId.equals("3")) {
+            connectedUsers = group3Users;
+            groupMessages = group3Messages;
+        } else if(groupId.equals("4")) {
+            connectedUsers = group4Users;
+            groupMessages = group4Messages;
+        } else {
+            connectedUsers = group5Users;
+            groupMessages = group5Messages;
+        }
         
         //Get a list of all currently connected users
         for(User user : connectedUsers) {
@@ -136,11 +171,11 @@ public class Server implements Runnable {
         payload += "], \"messages\": [";
 
         //Get last two messages sent
-        if(messages.size() >= 2) {
-            payload += "\"" + messages.get(messages.size() - 2).toString() + "\",";
+        if(groupMessages.size() >= 2) {
+            payload += "\"" + groupMessages.get(groupMessages.size() - 2).toString() + "\",";
         }
-        if(messages.size() >= 1) {
-            payload += "\"" + messages.get(messages.size() - 1).toString() + "\"";
+        if(groupMessages.size() >= 1) {
+            payload += "\"" + groupMessages.get(groupMessages.size() - 1).toString() + "\"";
         }
         payload += "]}\n";
 
@@ -149,7 +184,7 @@ public class Server implements Runnable {
         
         //Inform all other connected clients that the user has joined
         payload = "{\"message_type\": \"notification\",";
-        payload += "\"message\": \"" + username + " joined the group\"}\n";
+        payload += "\"message\": \"" + username + " joined group" + groupId + "\"}\n";
         for(User connectedUser : connectedUsers) {
             sendToClient(connectedUser.getSocket(), payload);
         }
@@ -160,7 +195,7 @@ public class Server implements Runnable {
     }  
 
     // Function to create a new post on the message board
-    public void createPost(String username, String subject, String messageText) throws Exception {
+    /* public void createPost(String username, String subject, String messageText) throws Exception {
         // Create a new message with a unique ID, sender, post date, subject, and content
         int messageID = messages.size() + 1; // Generate a unique ID
 
@@ -201,12 +236,26 @@ public class Server implements Runnable {
         }
         payload += "\"}\n";
         sendToClient(socket, payload);
-    }
+    } */
 
     //Function for outputting list of users.
-    public void sendUserList() throws Exception {
+    public void sendUserList(String groupId) throws Exception {
+        //Get user list
+        ArrayList<User> connectedUsers;
+        if(groupId.equals("1")) {
+            connectedUsers = group1Users;
+        } else if(groupId.equals("2")) {
+            connectedUsers = group2Users;
+        } else if(groupId.equals("3")) {
+            connectedUsers = group3Users;
+        } else if(groupId.equals("4")) {
+            connectedUsers = group4Users;
+        } else {
+            connectedUsers = group5Users;
+        }
+
         //Get a list of all currently connected users
-        String payload = "{\"message_type\": \"notification\", \"message\": \"Current list of users: ";
+        String payload = "{\"message_type\": \"notification\", \"message\": \"Current list of users in group " + groupId + ": ";
         for(User users : connectedUsers) {
             payload += users.getUsername() + ",";
         }
@@ -216,8 +265,22 @@ public class Server implements Runnable {
     }
 
     //Function for removing user from the group
-    public void removeUser(String username) throws Exception {
+    public void removeUser(String groupId, String username) throws Exception {
         User user = null;
+
+        //Get user list
+        ArrayList<User> connectedUsers;
+        if(groupId.equals("1")) {
+            connectedUsers = group1Users;
+        } else if(groupId.equals("2")) {
+            connectedUsers = group2Users;
+        } else if(groupId.equals("3")) {
+            connectedUsers = group3Users;
+        } else if(groupId.equals("4")) {
+            connectedUsers = group4Users;
+        } else {
+            connectedUsers = group5Users;
+        }
         
         // Ensure that the user is part of the connected users
         for(User users : connectedUsers) {
@@ -234,11 +297,11 @@ public class Server implements Runnable {
         String payload = "{\"message_type\": \"notification\", \"message\": \"";
         
         //Store the username into the message
-        payload += user.getUsername() + " left the group";
+        payload += user.getUsername() + " left group " + groupId;
         payload += "\"}\n";
 
         //Print that the user is leaving the group
-        System.out.println(user.getUsername() + " is leaving the group. ");
+        System.out.println(user.getUsername() + " left group " + groupId);
         
         //Remove the user from connectUsers
         connectedUsers.remove(user);
