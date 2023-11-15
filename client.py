@@ -10,6 +10,7 @@ import json
 import socket
 import sys
 import threading
+import time
 
 # Create global socket variable
 connection_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -41,6 +42,9 @@ def main() -> int:
 
         # Check command
         if command == 'exit':
+            if client_username:
+                leave_group()
+                time.sleep(1)
             print('Exiting')
             send_exit_command()
             server_listen_thread.join()
@@ -140,6 +144,7 @@ def listen_to_server():
             print(f'Invalid server response sent:\n{data_string[0:len(data_string) - 1]}')
             sys.exit(1)
 
+
 def client_connect(host: str, port: int) -> int:
     """
     @brief  Connects the client socket to the server at the specified address
@@ -228,6 +233,8 @@ def user_list():
 
 
 def leave_group():
+    global client_username
+
     # Construct leave command
     message = f'leave {client_username}\n'
     
@@ -236,6 +243,10 @@ def leave_group():
         connection_socket.sendall(message.encode('utf-8'))
     except OSError:
         print('Unable to remove the user from the group.')
+        return
+
+    # Clear client_username variable so that the client knows that it is not in the group anymore
+    client_username = ''
 
 
 def send_exit_command():
