@@ -42,21 +42,11 @@ def main() -> int:
 
         # Check command
         if command == 'exit':
-            if client_usernames[0]:
-                leave_group(0)
-                sleep(1)
-            if client_usernames[1]:
-                leave_group(1)
-                sleep(1)
-            if client_usernames[2]:
-                leave_group(2)
-                sleep(1)
-            if client_usernames[3]:
-                leave_group(3)
-                sleep(1)
-            if client_usernames[4]:
-                leave_group(4)
-                sleep(1)
+            # Leave any groups that the client is still in
+            for idx, client_username in enumerate(client_usernames):
+                if client_username:
+                    leave_group(str(idx + 1))
+                    sleep(1)
             print('Exiting')
             send_exit_command()
             server_listen_thread.join()
