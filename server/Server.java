@@ -87,9 +87,13 @@ public class Server implements Runnable {
             //Take action based on what command was entered
             if(command.equals("groupjoin")) {
                 addUser(args.get(0), args.get(1));
-            } /*else if(command.equals("post")) {
+            } else if(command.equals("grouppost")) {
                 //Get username
                 String username = args.get(0);
+                args.remove(0);
+                
+                //Get group ID
+                String groupId = args.get(0);
                 args.remove(0);
                 
                 //Get message subject and content
@@ -113,10 +117,10 @@ public class Server implements Runnable {
                 messageContent = messageContent.substring(0, messageContent.length() - 1);
 
                 //Call createPost function
-                createPost(username, subject, messageContent);
-            } else if(command.equals("message")) {
-                retrieveMessage(args.get(0));
-            }*/ else if (command.equals("groupusers")) {
+                createPost(username, groupId, subject, messageContent);
+            } else if(command.equals("groupmessage")) {
+                retrieveMessage(args.get(0), args.get(1));
+            } else if (command.equals("groupusers")) {
                 sendUserList(args.get(0));
             } else if(command.equals("groupleave")){
                 removeUser(args.get(0), args.get(1));
@@ -195,30 +199,64 @@ public class Server implements Runnable {
     }  
 
     // Function to create a new post on the message board
-    /* public void createPost(String username, String subject, String messageText) throws Exception {
+    public void createPost(String username, String groupId, String subject, String messageText) throws Exception {
+        //Get user and message lists
+        ArrayList<User> connectedUsers;
+        ArrayList<Message> groupMessages;
+        if(groupId.equals("1")) {
+            connectedUsers = group1Users;
+            groupMessages = group1Messages;
+        } else if(groupId.equals("2")) {
+            connectedUsers = group2Users;
+            groupMessages = group2Messages;
+        } else if(groupId.equals("3")) {
+            connectedUsers = group3Users;
+            groupMessages = group3Messages;
+        } else if(groupId.equals("4")) {
+            connectedUsers = group4Users;
+            groupMessages = group4Messages;
+        } else {
+            connectedUsers = group5Users;
+            groupMessages = group5Messages;
+        }
+
         // Create a new message with a unique ID, sender, post date, subject, and content
-        int messageID = messages.size() + 1; // Generate a unique ID
+        int messageID = groupMessages.size() + 1; // Generate a unique ID
 
         // Create the message object
         Message newMessage = new Message(Integer.toString(messageID), username, subject, messageText);
 
         // Add the new message to the list of messages
-        messages.add(newMessage);
+        groupMessages.add(newMessage);
 
         // Broadcast the new message to all connected clients
         String messageContent = newMessage.toString();
         String payload = "{\"message_type\": \"notification\",";
-        payload += "\"message\": \"" + messageContent + "\"}\n";
+        payload += "\"message\": \"Group " + groupId + ": " + messageContent + "\"}\n";
         for(User connectedUser : connectedUsers) {
             sendToClient(connectedUser.getSocket(), payload);
         }
     }
     
     // Function to retrieve the content of a specific message by its ID
-    public void retrieveMessage(String messageID) throws Exception {
+    public void retrieveMessage(String groupId, String messageID) throws Exception {
+        //Get user and message lists
+        ArrayList<Message> groupMessages;
+        if(groupId.equals("1")) {
+            groupMessages = group1Messages;
+        } else if(groupId.equals("2")) {
+            groupMessages = group2Messages;
+        } else if(groupId.equals("3")) {
+            groupMessages = group3Messages;
+        } else if(groupId.equals("4")) {
+            groupMessages = group4Messages;
+        } else {
+            groupMessages = group5Messages;
+        }
+
         // Find the message with the given ID
         Message targetMessage = null;
-        for(Message message : messages) {
+        for(Message message : groupMessages) {
             if(message.getId().equals(messageID)) {
                 targetMessage = message;
                 break;
@@ -232,11 +270,11 @@ public class Server implements Runnable {
             payload += messageContent;
         } else {
             // Notify the client that the message was not found
-            payload += "Message with ID " + messageID + " not found";
+            payload += "Message with ID " + messageID + " not found in group" + groupId;
         }
         payload += "\"}\n";
         sendToClient(socket, payload);
-    } */
+    }
 
     //Function for outputting list of users.
     public void sendUserList(String groupId) throws Exception {

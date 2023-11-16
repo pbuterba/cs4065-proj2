@@ -85,19 +85,32 @@ def main() -> int:
 
             # Call function to join group
             join_group(args[0], args[1])
-        elif command.startswith('post'):
-            args = ' '.join(command.split(' ')[1:]).split(': ')
-            if len(args) < 2:
-                print('Not enough arguments supplied for post command. Format [subject]: [message text]')
-                continue
-
-            post_message(f'{args[0]}: {args[1]}')
-        elif command.startswith('message'):
+        elif command.startswith('grouppost'):
             args = command.split(' ')[1:]
-            if len(args) < 1:
-                print('Not enough arguments supplied for message command. Requires [message ID]')
+            if len(args) < 3:
+                print('Not enough arguments supplied for grouppost command. Format [group ID] [subject]: [message text]')
                 continue
-            message_content(args[0])
+            if not check_valid_group_id(args[0]):
+                print('Invalid group ID specified. Must be between 1 and 5')
+                continue
+            if not check_joined_group_id(args[0]):
+                print(f'You cannot post to group {args[0]} because you are not a member of that group')
+                continue
+            group_id = args[0]
+            message_components = ' '.join(args[1:]).split(': ')
+            post_message(group_id, f'{message_components[0]}: {message_components[1]}')
+        elif command.startswith('groupmessage'):
+            args = command.split(' ')[1:]
+            if len(args) < 2:
+                print('Not enough arguments supplied for groupmessage command. Requires [group ID] [message ID]')
+                continue
+            if not check_valid_group_id(args[0]):
+                print('Invalid group ID specified. Must be between 1 and 5')
+                continue
+            if not check_joined_group_id(args[0]):
+                print(f'You cannot retrieve messages from group {args[0]} because you are not a member of that group')
+                continue
+            message_content(args[0], args[1])
         elif command.startswith('groupusers'):
             args = command.split(' ')[1:]
             if len(args) < 1:
@@ -224,13 +237,14 @@ def join_group(group_id: str, username: str):
     client_usernames[int(group_id) - 1] = username
 
 
-def post_message(everything: str):
+def post_message(group_id: str, message: str):
     """
     @brief  Posts a message on the bulletin board
-    @param  (str) everything: All the data to send to the server
+    @param  (str) group_id: The ID of the group in which to post the message
+    @param  (str) message: A colon separated string containing the subject and content of the message
     """
     # Construct the post command
-    post_command = f'post {client_username} {everything}\n'
+    post_command = f'grouppost {client_usernames[int(group_id) - 1]} {group_id} {message}\n'
 
     # Send the post command to the server
     try:
@@ -239,13 +253,14 @@ def post_message(everything: str):
         print('Unable to post message. You are not connected to a bulletin board server.')
 
 
-def message_content(message_id: str):
+def message_content(group_id: str, message_id: str):
     """
     @brief  Retrieves the content of a message with the given message ID
+    @param  (str) group_id: The ID of the group to retrieve the message from
     @param  (str) message_id: The ID of the message to retrieve
     """
     # Construct the message command
-    message_command = f'message {message_id}\n'
+    message_command = f'groupmessage {group_id} {message_id}\n'
 
     # Send the message command to the server
     try:
