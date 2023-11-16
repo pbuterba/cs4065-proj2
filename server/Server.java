@@ -188,7 +188,7 @@ public class Server implements Runnable {
         
         //Inform all other connected clients that the user has joined
         payload = "{\"message_type\": \"notification\",";
-        payload += "\"message\": \"" + username + " joined group" + groupId + "\"}\n";
+        payload += "\"message\": \"" + username + " joined group " + groupId + "\"}\n";
         for(User connectedUser : connectedUsers) {
             sendToClient(connectedUser.getSocket(), payload);
         }
