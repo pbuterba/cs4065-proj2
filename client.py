@@ -98,6 +98,9 @@ def main() -> int:
                 continue
             group_id = args[0]
             message_components = ' '.join(args[1:]).split(': ')
+            if len(message_components) < 2:
+                print('Not enough arguments supplied for grouppost command. Format [group ID] [subject]: [message text]')
+                continue
             post_message(group_id, f'{message_components[0]}: {message_components[1]}')
         elif command.startswith('groupmessage'):
             args = command.split(' ')[1:]
