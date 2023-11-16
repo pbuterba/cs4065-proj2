@@ -68,7 +68,7 @@ public class Server implements Runnable {
 
     private void waitForClientData() throws Exception {
         //Send connection data to client
-        String payload = "{\"message_type\": \"connection_data\", \"groups\": [\"Group 1\", \"Group 2\", \"Group 3\", \"Group 4\", \"Group 5\"]}\n";
+        String payload = "{\"message_type\": \"connection_data\", \"groups\": [\"1\", \"2\", \"3\", \"4\", \"5\"]}\n";
         sendToClient(socket, payload);
 
         //Get line of text sent from client
@@ -311,7 +311,7 @@ public class Server implements Runnable {
             sendToClient(connectedUser.getSocket(), payload);
         }
         
-        payload = "{\"message_type\": \"notification\", \"message\": \"Successfully left the group\"}\n";
+        payload = "{\"message_type\": \"notification\", \"message\": \"Successfully left group " + groupId + "\"}\n";
 
         //Send user list to client
         sendToClient(socket, payload);

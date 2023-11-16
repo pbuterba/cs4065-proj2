@@ -148,10 +148,14 @@ def listen_to_server():
         if server_data['message_type'] == 'notification':
             print(server_data['message'])
         elif server_data['message_type'] == 'connection_data':
+            print('Successfully connected to bulletin board server. ')
             if server_data['groups']:
+                print('Available groups on this server are:')
                 for group in server_data['groups']:
                     print(group)
-                print()
+            else:
+                print('There are no groups available on this server')
+            print()
         elif server_data['message_type'] == 'join_data':
             if server_data['users']:
                 print('Currently online users: ')
@@ -193,7 +197,6 @@ def client_connect(host: str, port: int) -> int:
     except ConnectionRefusedError:
         print(f'No server found at address {host}:{port}')
         return 1
-    print('Successfully connected to bulletin board server')
     return 0
 
 
@@ -216,7 +219,7 @@ def join_group(group_id: str, username: str):
         print('Unable to join group. You are not connected to a bulletin board server.')
         return
 
-    print('Successfully joined the group')
+    print(f'Successfully joined group {group_id}')
     global client_usernames
     client_usernames[int(group_id) - 1] = username
 
