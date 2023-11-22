@@ -12,7 +12,7 @@ In order to run the program, the following steps should be followed:
 4. Next, you will want to choose a group to join. Join a group by typing: groupjoin [group ID]. group ID must be 1-5.
 5. Now, you are connected and in a group. You can now post messages to the group, view messages in the group, view users in the group, leave the group, or exit the program. For details on how to run each of the commands, see the section Usability Notes.
 
-## Usablity Notes:
+## Usability Notes:
 A description and the corresponding command for the client program is described below:
 * connect: Connect the client to the server. The command is as follows: connect [server address] [server connection port]. If running on your machine, the server address is localhost. If not, the server address will be the IP address the server is running on. The server connection port is 6789.
 * groupjoin: Allows a user to join a group. A user cannot be in multiple groups, so once a group is joined, it must be left to join a different group. Also, the group numbers are 1-5. A group cannot be joined outside of this range of values. The command is as follows: groupjoin [group ID].
