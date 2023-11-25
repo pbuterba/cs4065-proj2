@@ -39,8 +39,12 @@ public class Server implements Runnable {
         this.socket = clientSocket;
     }
 
-    //Main function - Listens for connection requests and then 
+    //Main function - Listens for connection requests and then launches a new thread for that connection
     public static void main(String[] args) throws Exception {
+        /*
+         *  Main function
+         *  Continually listens for connection requests on port 6789, and starts a new thread for each incoming connection
+         */
         //Create server socket
         ServerSocket serverSocket = new ServerSocket(6789);
 
@@ -49,9 +53,14 @@ public class Server implements Runnable {
 
         //Loop infinetely until server is closed
         while(true) {
+            //Accept client connection
             Socket clientSocket = serverSocket.accept();
+
+            //Create a new instance of the server object
             Server clientConnection = new Server(clientSocket);
             System.out.println("New client connected with address " + clientSocket.getRemoteSocketAddress());
+
+            //Start a new thread to handle this client connection
             Thread thread = new Thread(clientConnection);
             thread.start();
         }
@@ -59,6 +68,10 @@ public class Server implements Runnable {
 
     //Run function - runs threads
     public void run() {
+        /*
+         *  Run function
+         *  Runs for each thread started - immediately calls waitForClientData() so that errors can be caught
+         */
         try {
             waitForClientData();
         } catch(Exception e) {
@@ -67,6 +80,12 @@ public class Server implements Runnable {
     }
 
     private void waitForClientData() throws Exception {
+        /*
+         *  Wait for Client Data function
+         *  Continually reads data from the socket which connects this instance of the Server class to a client
+         *  After each newline character, the string of text is parsed into a command and arguments, and processed appropriately
+         *  The function ends when the "exit" command is received
+         */
         //Send connection data to client
         String payload = "{\"message_type\": \"connection_data\", \"groups\": [\"1\", \"2\", \"3\", \"4\", \"5\"]}\n";
         sendToClient(socket, payload);
@@ -129,6 +148,7 @@ public class Server implements Runnable {
             dataLine = readFromClient(socket);
         }
 
+        //Respond to the client that it has received the "exit" command
         payload = "{\"message_type\": \"exit\"}\n";
         sendToClient(socket, payload);
         
@@ -139,6 +159,12 @@ public class Server implements Runnable {
 
     //Function for user joining the group
     public void addUser(String groupId, String username) throws Exception {
+        /*
+         *  Add User function
+         *  Adds a new user to a message group
+         *  @param String groupId: The group to join
+         *  @param String username: The username to join the group with
+         */
         System.out.println(username + " joined group " + groupId);
 
         //Gather information to send to the new user formatted as JSON string
@@ -200,6 +226,14 @@ public class Server implements Runnable {
 
     // Function to create a new post on the message board
     public void createPost(String username, String groupId, String subject, String messageText) throws Exception {
+        /*
+         *  Create Post function
+         *  Creates a new post in a group
+         *  @param String username: The name of the user posting the message
+         *  @param String groupId: The ID of the group to post the message in
+         *  @param String subject: The subject of the message being posted
+         *  @param String messageText: The content text of the message being posted
+         */
         //Get user and message lists
         ArrayList<User> connectedUsers;
         ArrayList<Message> groupMessages;
@@ -220,26 +254,30 @@ public class Server implements Runnable {
             groupMessages = group5Messages;
         }
 
-        // Create a new message with a unique ID, sender, post date, subject, and content
+        //Create message object
         int messageID = groupMessages.size() + 1; // Generate a unique ID
-
-        // Create the message object
         Message newMessage = new Message(Integer.toString(messageID), username, subject, messageText);
 
         // Add the new message to the list of messages
         groupMessages.add(newMessage);
 
         // Broadcast the new message to all connected clients
-        String messageContent = newMessage.toString();
+        String messageInfo = newMessage.toString();
         String payload = "{\"message_type\": \"notification\",";
-        payload += "\"message\": \"Group " + groupId + ": " + messageContent + "\"}\n";
+        payload += "\"message\": \"Group " + groupId + ": " + messageInfo + "\"}\n";
         for(User connectedUser : connectedUsers) {
             sendToClient(connectedUser.getSocket(), payload);
         }
     }
     
     // Function to retrieve the content of a specific message by its ID
-    public void retrieveMessage(String groupId, String messageID) throws Exception {
+    public void retrieveMessage(String groupId, String messageId) throws Exception {
+        /*
+         *  Retrieve Message function
+         *  Gets the content of a requested message, and sends it back to the client as text
+         *  @param String groupId: The ID of the group in which the message was sent
+         *  @param String messageId: Th ID of the message sent
+         */
         //Get user and message lists
         ArrayList<Message> groupMessages;
         if(groupId.equals("1")) {
@@ -257,11 +295,13 @@ public class Server implements Runnable {
         // Find the message with the given ID
         Message targetMessage = null;
         for(Message message : groupMessages) {
-            if(message.getId().equals(messageID)) {
+            if(message.getId().equals(messageId)) {
                 targetMessage = message;
                 break;
             }
         }
+
+        //Construct the JSON payload
         String payload = "{\"message_type\": \"notification\", ";
         payload += "\"message\": \"";
         if(targetMessage != null) {
@@ -270,7 +310,7 @@ public class Server implements Runnable {
             payload += messageContent;
         } else {
             // Notify the client that the message was not found
-            payload += "Message with ID " + messageID + " not found in group" + groupId;
+            payload += "Message with ID " + messageId + " not found in group" + groupId;
         }
         payload += "\"}\n";
         sendToClient(socket, payload);
@@ -278,6 +318,11 @@ public class Server implements Runnable {
 
     //Function for outputting list of users.
     public void sendUserList(String groupId) throws Exception {
+        /*
+         *  Send user list function
+         *  Sends a list of all the users currently in the requested group to a client
+         *  @param String groupId: The ID of the group for which to send the user list
+         */
         //Get user list
         ArrayList<User> connectedUsers;
         if(groupId.equals("1")) {
@@ -304,6 +349,12 @@ public class Server implements Runnable {
 
     //Function for removing user from the group
     public void removeUser(String groupId, String username) throws Exception {
+        /*
+         *  Remove user function
+         *  Removes a user from the list of users in a certain group
+         *  @param String groupId: The ID of the group to remove the user from
+         *  @param String username: The username of the user to remove from the group
+         */
         User user = null;
 
         //Get user list
@@ -321,6 +372,7 @@ public class Server implements Runnable {
         }
         
         // Ensure that the user is part of the connected users
+        // This is checked on the client end as well, so this is a redundancy check to avoid undefined behavior
         for(User users : connectedUsers) {
             if(users.getUsername().equals(username)) {
                 user = users;
@@ -338,10 +390,10 @@ public class Server implements Runnable {
         payload += user.getUsername() + " left group " + groupId;
         payload += "\"}\n";
 
-        //Print that the user is leaving the group
+        //Print that the user is leaving the group to the server console
         System.out.println(user.getUsername() + " left group " + groupId);
         
-        //Remove the user from connectUsers
+        //Remove the user from the list of connected users
         connectedUsers.remove(user);
 
         //Inform all other connected clients that the user has left the group
@@ -357,11 +409,23 @@ public class Server implements Runnable {
 
     //Static helper functions
     public static String readFromClient(Socket clientSocket) throws Exception {
+        /*
+         *  Read from Client function
+         *  Reads a line of data from a socket connected to a client
+         *  @param Socket clientSocket: The socket from which data will be read
+         *  @return String: The line of text read from the socket as a Java String 
+         */
         BufferedReader streamFromClient = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         return streamFromClient.readLine();
     }
 
     public static void sendToClient(Socket clientSocket, String data) throws Exception {
+        /*
+         *  Send to Client function
+         *  Writes a string of text into a socket connected to a client
+         *  @param Socket clientSocket: The socket into which data will be written
+         *  @param String data: The text to write to the socket
+         */
         DataOutputStream streamToClient = new DataOutputStream(clientSocket.getOutputStream());
         streamToClient.writeBytes(data);
     }
