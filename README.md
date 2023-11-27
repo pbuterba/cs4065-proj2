@@ -6,7 +6,7 @@ The goal of this project was to build a bulletin board socket program in which t
 
 ## Instructions to Run Program:
 In order to run the program, the following steps should be followed:
-1. Start up the Java server, Server.java, by compiling and running the Java program. You should get the output: Server started.
+1. Start up the Java server, [Server.java](server/Server.java), by compiling and running the Java program. You should get the output: Server started.
 2. Start up the Python client, client.py, by running the Python program You should get a list of options, including: connect, groupjoin, grouppost, groupusers, groupleave, groupmessage, and exit.
 3. The first option you want to choose is connect. On the command line, type: connect localhost 6789. This will connect you to the server running on localhost and port 6789. If the server is not running on your localhost, you will need to substitue this with the correct IP address.
 4. Next, you will want to choose a group to join. Join a group by typing: groupjoin [group ID]. group ID must be 1-5.
