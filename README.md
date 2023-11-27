@@ -15,7 +15,7 @@ In order to run the program, the following steps should be followed:
 ## Usability Notes:
 A description and the corresponding command for the client program is described below:
 * connect: Connect the client to the server. The command is as follows: connect [server address] [server connection port]. If running on your machine, the server address is localhost. If not, the server address will be the IP address the server is running on. The server connection port is 6789.
-* groupjoin: Allows a user to join a group. A user cannot be in multiple groups, so once a group is joined, it must be left to join a different group. Also, the group numbers are 1-5. A group cannot be joined outside of this range of values. The command is as follows: groupjoin [group ID].
+* groupjoin: Allows a user to join a group. A user cannot join a group more than once. Also, the group numbers are 1-5. A group cannot be joined outside of this range of values. The command is as follows: groupjoin [group ID].
 * grouppost: Allows a user to post a message to a specified group. The message must have a subject that is seperated from the message by a colon. The command is as follows: groupost [group ID] [subject] : [message text]
 * groupusers: Lists the users within a group. The command is as follows: groupusers [group ID].
 * groupleave: Allows the user to leave the group it is part of. The correct ID must be entered for the user to leave its proper group. The command is as follows: groupleave [group ID].
