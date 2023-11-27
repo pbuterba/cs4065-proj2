@@ -33,7 +33,7 @@ def main() -> int:
     # Print menu options
     print('Bulletin Board Client Options: ')
     print('connect [server address] [server connection port] - Connects to a bulletin board server')
-    print('groupjoin [group ID] - Joins the specified group')
+    print('groupjoin [group ID] [username] - Joins the specified group')
     print('grouppost [group ID] [subject]: [message text] - Posts a message to the specified group with the given subject')
     print('groupusers [group ID] - Lists the users currently in the specified group')
     print('groupleave [group ID] - Leaves the specified group')
